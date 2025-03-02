@@ -1,0 +1,28 @@
+{
+  "name": "stellaris_tech_tree",
+  "version": "1.0.0",
+  "description": "Interactive tech tree visualization for Stellaris",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest",
+    "lint": "eslint src/**/*.js"
+  },
+  "keywords": [
+    "stellaris",
+    "tech-tree",
+    "visualization"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "sqlite3": "^5.1.7",
+    "winston": "^3.11.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0"
+  }
+}
