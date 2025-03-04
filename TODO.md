@@ -20,14 +20,14 @@ The application will follow a modular architecture with these primary components
 
 ## Development Phases
 
-### Phase 1: Data Collection and Base Game Parsing ✅ COMPLETED
+### Phase 1: Data Collection and Base Game Parsing 
 
 **Tasks:**
-1. Create a utility to locate and read the SQLite database containing mod information ✅
-2. Implement functions to identify and parse base game technology files ✅
-3. Implement functions to identify and parse mod-provided technology files ✅
-4. Create a consolidated technology database from base game and mod files ✅
-5. Create a configuration system for file paths and user preferences ✅
+1. Create a utility to locate and read the SQLite database containing mod information 
+2. Implement functions to identify and parse base game technology files 
+3. Implement functions to identify and parse mod-provided technology files 
+4. Create a consolidated technology database from base game and mod files 
+5. Create a configuration system for file paths and user preferences 
 
 **Data Sources:**
 - Stellaris launcher SQLite database (`launcher-v2.sqlite`) located in the Stellaris user documents folder
@@ -52,41 +52,6 @@ The application will follow a modular architecture with these primary components
 6. **Configuration System**: Implement centralized configuration management with environment-aware settings.
 7. **Error Handling**: Implement robust error handling and logging throughout the codebase.
 8. **Performance Considerations**: Implement efficient file operations and caching mechanisms.
-
-**Phase 1 Completion**
-
-The Phase 1 enhancements have been successfully implemented. The technology parser now:
-
-1. **Extracts Technology Data**: Successfully parses technology files from both the base game and mods.
-2. **Handles Complex Structures**: Parses nested blocks, prerequisites, and effects.
-3. **Merges Technologies**: Correctly merges technologies from different sources, with mod definitions overriding base game definitions.
-4. **Normalizes Properties**: Extracts and normalizes important properties like area, tier, and category.
-5. **Builds Relationships**: Attempts to build relationships between technologies based on prerequisites.
-
-In total, the parser successfully extracted 2,239 unique technologies from the base game and installed mods.
-
-### Next Steps
-
-1. **Localization Integration**: Implement parsing of localization files to map technology IDs to human-readable names and descriptions.
-2. **Visualization Preparation**: Prepare the data for visualization by organizing technologies into a hierarchical structure.
-3. **Additional Metadata**: Extract additional metadata from the game files to enhance the technology tree visualization.
-4. **Performance Optimization**: Optimize the parsing process for larger mod collections.
-
-### Open Issues
-
-1. **Technology Effects Parsing**: The current parser has difficulty extracting complete information about technology effects, prerequisites, and unlocks. This is due to:
-   - Complex nested structures in technology definitions
-   - Varied formats for defining prerequisites and effects across different mods
-   - References to variables and script values that need to be resolved
-   - Challenges with PowerShell command execution when examining JSON output
-
-2. **Linux Development Migration**: Development is being migrated to Linux to resolve issues with PowerShell command execution and file interaction.
-
-3. **Parser Robustness**: Need to enhance the parser to better handle:
-   - Complex prerequisite structures (AND/OR/NOT conditions)
-   - Various unlock formats (buildings, components, ship sizes, etc.)
-   - Weight modifiers that affect technology appearance chances
-   - Special effects like gateways, modifiers, and command limits
 
 ### Phase 2: Save Game Parsing
 
