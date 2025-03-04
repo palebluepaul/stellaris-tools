@@ -32,7 +32,7 @@ The application will follow a modular architecture with these primary components
 5. Create a configuration system for file paths and user preferences (cross-platform)
 
 **Robust Technology File Parsing Solution:**
-- Implement a custom parser using a parsing library like PEG.js or Nearley to handle nested structures and complex syntax reliably.
+- Implement a custom parser using a parsing library like PEG.js or Nearley to handle nested structures and complex syntax reliably. Do not use a regex based approach due to nested structure and inconsistent whitespace. 
 - Lexer: Tokenize input files into meaningful tokens.
 - Parser: Construct an Abstract Syntax Tree (AST) from tokens.
 - AST Traversal: Extract technology definitions, properties, and nested conditions.
