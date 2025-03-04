@@ -3,8 +3,8 @@
 ## Project Overview
 
 This application will create an interactive tech tree visualization for Stellaris based on the user's mod set and save game data. It will:
-1. Read installed Stellaris mods from the user's active mod set
-2. Read the user's last save game to determine researched technologies
+1. Read installed Stellaris mods from the user's active mod set (cross-platform)
+2. Read the user's last save game to determine researched technologies (cross-platform)
 3. Generate an interactive tech tree visualization
 4. Highlight researched technologies and missing prerequisites
 5. Display friendly names for conditions and variables
@@ -13,45 +13,40 @@ This application will create an interactive tech tree visualization for Stellari
 
 The application will follow a modular architecture with these primary components:
 
-1. **Data Collection Module**: Responsible for gathering all required data from game files, mods, and save games
+1. **Data Collection Module**: Responsible for gathering all required data from game files, mods, and save games (cross-platform)
 2. **Data Processing Module**: Responsible for parsing, merging, and preparing the data for visualization
 3. **Visualization Module**: Handles the rendering of the tech tree in the UI
 4. **User Interface**: A Node.js front-end application using Tailwind CSS
 
 ## Development Phases
 
-### Phase 1: Data Collection and Base Game Parsing 
+### Phase 1: Data Collection and Base Game Parsing (Cross-platform)
 
 **Tasks:**
-1. Create a utility to locate and read the SQLite database containing mod information 
-2. Implement functions to identify and parse base game technology files 
-3. Implement functions to identify and parse mod-provided technology files 
-4. Create a consolidated technology database from base game and mod files 
-5. Create a configuration system for file paths and user preferences 
+1. Create a cross-platform utility to locate and read the SQLite database containing mod information:
+   - Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\launcher-v2.sqlite`
+   - macOS: `~/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite`
+2. Implement functions to identify and parse base game technology files (cross-platform paths)
+3. Implement functions to identify and parse mod-provided technology files (cross-platform paths)
+4. Create a consolidated technology database from base game and mod files
+5. Create a configuration system for file paths and user preferences (cross-platform)
 
-**Data Sources:**
-- Stellaris launcher SQLite database (`launcher-v2.sqlite`) located in the Stellaris user documents folder
-- Stellaris base game technology files (at `C:\Program Files (x86)\Steam\steamapps\common\Stellaris\common\technology\`)
-- Mod-provided technology files in respective mod directories
-- Localization files for friendly names
+**Robust Technology File Parsing Solution:**
+- Implement a custom parser using a parsing library like PEG.js or Nearley to handle nested structures and complex syntax reliably.
+- Lexer: Tokenize input files into meaningful tokens.
+- Parser: Construct an Abstract Syntax Tree (AST) from tokens.
+- AST Traversal: Extract technology definitions, properties, and nested conditions.
+- Error Handling: Detailed error reporting with line numbers and context.
 
 **Tests:**
-1. Unit tests for database reading functions
-2. Unit tests for file path resolution
-3. Unit tests for technology file parsers
-4. Integration test to verify all technologies are correctly loaded from both base game and mods
-5. Validation test to ensure correct identification of the active mod set
-6. Error handling tests for missing files or corrupted data
+- Unit tests for database reading functions (cross-platform)
+- Unit tests for file path resolution (cross-platform)
+- Unit tests for robust technology file parser (lexer, parser, AST generation)
+- Integration test to verify all technologies are correctly loaded from both base game and mods
+- Validation test to ensure correct identification of the active mod set
+- Error handling tests for missing files or corrupted data
 
-**Implementation Notes:**
-1. **Database Access**: Implement SQLite database access with proper error handling.
-2. **Mod Path Resolution**: Implement robust path resolution for mods with detailed logging.
-3. **Technology File Collection**: Collect base game and mod technology files with filtering and logging.
-4. **Technology Parsing**: Enhanced parsing capabilities for technology files, including complex prerequisites and effects.
-5. **Data Consolidation**: Merge technologies from base game and mods into a unified collection.
-6. **Configuration System**: Implement centralized configuration management with environment-aware settings.
-7. **Error Handling**: Implement robust error handling and logging throughout the codebase.
-8. **Performance Considerations**: Implement efficient file operations and caching mechanisms.
+
 
 ### Phase 2: Save Game Parsing
 
@@ -92,6 +87,9 @@ The application will follow a modular architecture with these primary components
 5. Performance tests with large save files
 6. Tests with different research states (no research, partial research, complete research)
 7. Error handling tests for corrupted save files
+- Adjust save game paths for cross-platform compatibility:
+  - Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\save games\`
+  - macOS: `~/Documents/Paradox Interactive/Stellaris/save games/`
 
 ### Phase 3: Technology Tree Construction
 
@@ -143,7 +141,7 @@ The application will follow a modular architecture with these primary components
 5. Cross-browser compatibility tests
 6. Tests for correct visual state representation
 
-### Phase 5: Application Integration and Polish
+### Phase 5: Application Integration and Polish (Cross-platform)
 
 **Tasks:**
 1. Integrate all components into a cohesive application
@@ -327,4 +325,14 @@ The application will follow a modular architecture with these primary components
 - Verify file formats and structures before implementing parsers
 - Consider caching strategies for performance optimization
 - Implement a dev mode with mock data for faster UI development
-- For save parsing, study the approaches used by existing tools like Stellaris Save API 
+- For save parsing, study the approaches used by existing tools like Stellaris Save API
+
+- Add parser generator library (`nearley.js` or `peg.js`) for robust technology file parsing
+
+## Implementation Considerations
+
+- Ensure all file paths use Node.js `path` module for cross-platform compatibility.
+- Verify file existence and permissions using Node.js APIs (`fs.existsSync`, `fs.promises`).
+
+- Ensure export/import functionality uses cross-platform file dialogs.
+- Implement cross-platform error handling and logging. 
