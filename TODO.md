@@ -31,12 +31,223 @@ The application will follow a modular architecture with these primary components
 4. Create a consolidated technology database from base game and mod files
 5. Create a configuration system for file paths and user preferences (cross-platform)
 
+**Launcher Database Structure:**
+- **playsets table**: Contains information about mod collections
+  ```
+  CREATE TABLE playsets (
+    id char(36) not null,
+    name varchar(255) not null,
+    isActive boolean,
+    loadOrder varchar(255),
+    pdxId int,
+    pdxUserId char(36),
+    createdOn datetime not null,
+    updatedOn datetime,
+    syncedOn datetime,
+    lastServerChecksum text,
+    isRemoved boolean not null default false,
+    hasNotApprovedChanges boolean not null default '0',
+    syncState varchar(255),
+    primary key (id),
+    constraint uq_pdxId unique (pdxId)
+  );
+  ```
+  - Key columns: `id`, `name`, `isActive` (identifies the currently active playset)
+
+- **mods table**: Contains information about all available mods
+  ```
+  CREATE TABLE mods (
+    id char(36) not null,
+    pdxId varchar(255),
+    steamId varchar(255),
+    gameRegistryId text,
+    name varchar(255),
+    displayName varchar(255),
+    thumbnailUrl text,
+    thumbnailPath text,
+    version varchar(255),
+    tags json default '[]',
+    requiredVersion varchar(255),
+    arch text,
+    os text,
+    repositoryPath text,
+    dirPath text,  /* Path to the mod directory */
+    archivePath text,
+    status text not null,
+    source text not null,
+    /* Additional fields omitted for brevity */
+    primary key (id)
+  );
+  ```
+  - Key columns: `id`, `name`, `dirPath` (path to mod files)
+
+- **playsets_mods table**: Maps mods to playsets with position and enabled status
+  ```
+  CREATE TABLE playsets_mods (
+    playsetId char(36) not null,
+    modId char(36) not null,
+    enabled boolean default '1',
+    position integer,
+    foreign key(playsetId) references playsets(id) on delete CASCADE,
+    foreign key(modId) references mods(id) on delete CASCADE
+  );
+  ```
+  - Key columns: `playsetId`, `modId`, `enabled`, `position` (load order)
+
+**Query to get active mods:**
+```sql
+SELECT m.id, m.name, m.dirPath, pm.enabled, pm.position 
+FROM mods m 
+JOIN playsets_mods pm ON m.id = pm.modId 
+JOIN playsets p ON pm.playsetId = p.id 
+WHERE p.isActive = 1 AND pm.enabled = 1 
+ORDER BY pm.position;
+```
+
 **Robust Technology File Parsing Solution:**
 - Implement a custom parser using a parsing library like PEG.js or Nearley to handle nested structures and complex syntax reliably. Do not use a regex based approach due to nested structure and inconsistent whitespace. 
 - Lexer: Tokenize input files into meaningful tokens.
 - Parser: Construct an Abstract Syntax Tree (AST) from tokens.
 - AST Traversal: Extract technology definitions, properties, and nested conditions.
 - Error Handling: Detailed error reporting with line numbers and context.
+
+**Technology File Structure Examples:**
+
+1. **Basic Technology Definition:**
+```
+tech_basic_science_lab_1 = {
+    cost = @tier0cost1
+    area = physics
+    tier = 0
+    category = { computing }
+    start_tech = yes
+
+    # unlock basic science lab lvl 1
+    weight_modifier = {
+        factor = 1000
+    }
+
+    ai_weight = {
+        weight = 10000
+    }
+
+    starting_potential = {
+        is_low_tech_start = no # So Broken Shackles origin players don't start with it
+    }
+}
+```
+
+2. **Technology with Prerequisites:**
+```
+tech_sensors_3 = {
+    area = physics
+    cost = @tier3cost1
+    tier = 3
+    category = { computing }
+    ai_update_type = all
+    prerequisites = { "tech_sensors_2" }
+    weight = @tier3weight1
+
+    weight_modifier = {
+        modifier = {
+            factor = 1.25
+            has_tradition = tr_discovery_adopt
+        }
+    }
+
+    ai_weight = {
+    }
+
+    prereqfor_desc = {
+        component = {
+            title = "TECH_UNLOCK_SENSOR_3_TITLE"
+            desc = "TECH_UNLOCK_SENSOR_3_DESC"
+        }
+    }
+}
+```
+
+3. **Technology with Multiple Prerequisites:**
+```
+tech_juggernaut = {
+    cost = @tier5cost3
+    area = engineering
+    category = { voidcraft }
+    tier = 5
+    prerequisites = { "tech_starbase_5" "tech_battleships" }
+    weight = @tier5weight3
+    is_rare = yes
+
+    potential = {
+        host_has_dlc = "Federations"
+    }
+
+    # unlocks Juggernaut
+    weight_modifier = {
+        factor = 0.25
+        modifier = {
+            factor = 1.5
+            OR = {
+                has_trait_in_council = { TRAIT = leader_trait_curator }
+                has_trait_in_council = { TRAIT = leader_trait_maniacal }
+                has_trait_in_council = { TRAIT = leader_trait_maniacal_2 }
+                has_trait_in_council = { TRAIT = leader_trait_maniacal_3 }
+            }
+        }
+        inline_script = {
+            script = technologies/rare_technologies_weight_modifiers
+            TECHNOLOGY = tech_juggernaut
+        }
+        modifier = {
+            factor = 1.25
+            has_technology = "tech_titans"
+        }
+    }
+}
+```
+
+4. **Technology with Complex Conditions:**
+```
+tech_archaeostudies = {
+    cost = @tier2cost1
+    area = society
+    category = { archaeostudies }
+    tier = 2
+    is_rare = yes
+    weight = @tier2weight3
+
+    potential = {
+        has_ancrel = yes
+    }
+
+    weight_modifier = {
+        inline_script = {
+            script = technologies/rare_technologies_weight_modifiers
+            TECHNOLOGY = tech_archaeostudies
+        }
+        modifier = {
+            factor = 0
+            has_ancrel = no
+        }
+        modifier = {
+            factor = 0.3
+            count_archaeological_site = {
+                count < 3
+                limit = {
+                    is_site_completed = yes
+                }
+            }
+        }
+        modifier = {
+            factor = 3
+            OR = {
+                has_country_flag = origin_shoulders_closure
+                has_completed_precursor_research = yes
+            }
+        }
+    }
+}
+```
 
 **Tests:**
 - Unit tests for database reading functions (cross-platform)
@@ -46,7 +257,195 @@ The application will follow a modular architecture with these primary components
 - Validation test to ensure correct identification of the active mod set
 - Error handling tests for missing files or corrupted data
 
+## Phase 1 Implementation Plan - Data Collection and Base Game Parsing
 
+### Step 1: Project Setup
+1. **Initialize Project Structure**
+   - Create a Node.js project
+   - Set up directory structure (src, tests, config)
+   - Configure ESLint and Jest
+   - Create initial package.json with dependencies
+   - Set up Git repository with appropriate .gitignore
+
+2. **Install Core Dependencies**
+   - Node.js libraries for file system operations
+   - SQLite3 for database access
+   - PEG.js or Nearley.js for parser generation
+   - Testing libraries (Jest, supertest)
+   - Logging library (winston or similar)
+
+3. **Create Configuration System**
+   - Implement cross-platform path resolution
+   - Create configuration file structure
+   - Implement user preferences storage
+   - Add environment-specific configuration options
+   
+**Testable Increment:** Project structure with working configuration system that can be tested with simple commands.
+
+### Step 2: Cross-Platform Path Resolution (1-2 days)
+1. **Implement Game Path Detection**
+   - Create utility to detect Stellaris installation path on Windows and macOS
+   - Implement functions to locate user documents folder on different platforms
+   - Add validation to ensure paths exist and are accessible
+
+2. **Create Path Resolution Module**
+   - Implement functions to resolve paths for game files, mods, and save games
+   - Add platform-specific path handling
+   - Create fallback mechanisms for missing paths
+
+3. **Add Path Caching**
+   - Implement caching for frequently accessed paths
+   - Add invalidation mechanism for cache
+
+**Testable Increment:** Command-line utility that can detect and display Stellaris installation paths and key directories on the current platform.
+
+### Step 3: SQLite Database Access (2-3 days)
+1. **Create Database Connection Module**
+   - Implement connection handling for SQLite database
+   - Add error handling for missing or corrupt database
+   - Create connection pooling if needed
+
+2. **Implement Mod Database Queries**
+   - Create function to query active playset
+   - Implement query to get all mods in active playset
+   - Add function to get mod details by ID
+
+3. **Create Mod Information Model**
+   - Define data models for mod data with JSDoc comments for clarity
+   - Implement data transformation from raw database results
+   - Add validation for mod data integrity
+
+**Testable Increment:** Command-line utility that can connect to the launcher database and list all active mods with their load order.
+
+### Step 4: Technology File Location (2 days)
+1. **Implement Base Game Tech File Discovery**
+   - Create utility to scan base game directories for technology files
+   - Add recursive directory traversal with filtering
+   - Implement file type detection and validation
+
+2. **Add Mod Tech File Discovery**
+   - Extend file discovery to mod directories
+   - Handle different mod directory structures
+   - Implement load order resolution for conflicting files
+
+3. **Create File Registry**
+   - Implement registry of all discovered technology files
+   - Add metadata about file sources (base game vs mod)
+   - Create lookup functions for efficient access
+
+**Testable Increment:** Utility that can scan the game and mod directories and output a list of all technology files found, with their sources and paths.
+
+### Step 5: Parser Development (3-4 days)
+1. **Create Grammar Definition**
+   - Define formal grammar for Stellaris technology files using PEG.js or Nearley.js
+   - Handle nested structures and special syntax
+   - Add support for comments and whitespace variations
+
+2. **Generate Parser**
+   - Use grammar to generate parser code
+   - Integrate parser into the application
+   - Add performance optimizations if needed
+
+3. **Implement AST Processing**
+   - Create functions to traverse and process the Abstract Syntax Tree
+   - Implement extraction of technology definitions
+   - Add validation for required fields and data types
+
+**Testable Increment:** Parser that can read a single technology file and output its structured representation as JSON.
+
+### Step 6: Technology Data Model (2-3 days)
+1. **Define Technology Model**
+   - Create JavaScript data models with JSDoc comments for technology data
+   - Define relationships between technologies
+   - Add validation for required fields
+
+2. **Implement Data Transformation**
+   - Create functions to transform parsed data into model objects
+   - Add normalization for consistent data format
+   - Implement reference resolution for prerequisites
+
+3. **Add Serialization/Deserialization**
+   - Implement functions to serialize technology data for storage
+   - Add deserialization for loading saved data
+   - Create data migration strategy for format changes
+
+**Testable Increment:** Library that can parse a technology file and convert it into a structured technology object with all properties correctly typed.
+
+### Step 7: Consolidated Technology Database (2-3 days)
+1. **Create In-Memory Database**
+   - Implement data structure for storing all technologies
+   - Add indexing for efficient lookups
+   - Create query functions for filtering and searching
+
+2. **Implement Mod Override Resolution**
+   - Add logic to handle conflicting technology definitions
+   - Implement load order-based resolution
+   - Create conflict detection and reporting
+
+3. **Add Relationship Resolution**
+   - Implement prerequisite relationship resolution
+   - Create technology tree structure
+   - Add validation for circular dependencies
+
+**Testable Increment:** System that can load multiple technology files, resolve conflicts, and provide a consolidated view of all technologies with their relationships.
+
+### Step 8: Integration and Testing (2-3 days)
+1. **Create Main Module**
+   - Implement main application flow
+   - Add orchestration of all components
+   - Create command-line interface for testing
+
+2. **Add Comprehensive Error Handling**
+   - Implement robust error handling throughout the application
+   - Add detailed error messages and logging
+   - Create recovery mechanisms for non-critical errors
+
+3. **Write Integration Tests**
+   - Create tests for end-to-end functionality
+   - Add tests for edge cases and error conditions
+   - Implement performance tests for large datasets
+
+**Testable Increment:** Complete Phase 1 implementation that can be run from the command line, loading all technology data from the base game and active mods.
+
+### Step 9: Performance Optimization and Caching (1-2 days)
+1. **Implement Caching System**
+   - Add caching for parsed technology files
+   - Implement cache invalidation based on file changes
+   - Create configurable cache settings
+
+2. **Optimize Performance**
+   - Profile application performance
+   - Implement optimizations for bottlenecks
+   - Add lazy loading for large datasets
+
+3. **Add Progress Reporting**
+   - Implement progress tracking for long operations
+   - Add user feedback mechanisms
+   - Create cancellation support for operations
+
+**Testable Increment:** Optimized system with caching that shows measurable performance improvements over the initial implementation.
+
+### Step 10: Documentation and Cleanup (1-2 days)
+1. **Create Technical Documentation**
+   - Document architecture and components
+   - Add API documentation for all modules
+   - Create developer guide for future extensions
+
+2. **Write User Documentation**
+   - Create user guide for command-line interface
+   - Add troubleshooting section
+   - Document configuration options
+
+3. **Code Cleanup and Refactoring**
+   - Review and refactor code for clarity and maintainability
+   - Ensure consistent coding style
+   - Address technical debt
+
+**Testable Increment:** Well-documented, clean codebase with comprehensive documentation for both users and developers.
+
+### Total Estimated Time: 16-24 days
+
+This implementation plan breaks down Phase 1 into manageable steps, each with a testable increment that can be verified before moving to the next step. The plan follows a logical progression from basic setup to a complete implementation, with each step building on the previous ones.
 
 ### Phase 2: Save Game Parsing
 
@@ -307,7 +706,6 @@ The application will follow a modular architecture with these primary components
    - Compression libraries for save file parsing
 
 2. **Development Dependencies**
-   - TypeScript for type safety
    - Jest for testing
    - ESLint for code quality
    - Vite for building
@@ -321,7 +719,7 @@ The application will follow a modular architecture with these primary components
 
 - Focus on modularity to allow independent development and testing of components
 - Implement robust logging to aid in debugging
-- Use TypeScript for type safety in handling complex data structures
+- Use JSDoc comments to document code structure and types
 - Verify file formats and structures before implementing parsers
 - Consider caching strategies for performance optimization
 - Implement a dev mode with mock data for faster UI development
