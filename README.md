@@ -17,7 +17,7 @@ This project is currently in early development. See the [TODO.md](TODO.md) file 
 ### Current Phase: Phase 1 - Data Collection and Base Game Parsing
 
 - [x] Step 1: Project Setup
-- [ ] Step 2: Cross-Platform Path Resolution
+- [x] Step 2: Cross-Platform Path Resolution
 - [ ] Step 3: SQLite Database Access
 - [ ] Step 4: Technology File Location
 - [ ] Step 5: Parser Development
@@ -55,6 +55,9 @@ npm run lint
 
 # Fix linting issues
 npm run lint:fix
+
+# Display Stellaris path information
+npm run path-info
 ```
 
 ## License

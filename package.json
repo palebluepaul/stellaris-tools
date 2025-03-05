@@ -7,7 +7,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.js tests/**/*.js",
-    "lint:fix": "eslint src/**/*.js tests/**/*.js --fix"
+    "lint:fix": "eslint src/**/*.js tests/**/*.js --fix",
+    "path-info": "node src/cli/pathInfo.js"
   },
   "keywords": [],
   "author": "",
