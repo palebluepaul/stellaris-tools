@@ -8,7 +8,8 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.js tests/**/*.js",
     "lint:fix": "eslint src/**/*.js tests/**/*.js --fix",
-    "path-info": "node src/cli/pathInfo.js"
+    "path-info": "node src/cli/pathInfo.js",
+    "mod-info": "node src/cli/modInfo.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
   "description": "",
   "dependencies": {
     "nearley": "^2.20.1",
+    "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "winston": "^3.17.0"
   },
