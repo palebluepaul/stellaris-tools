@@ -19,7 +19,7 @@ This project is currently in early development. See the [TODO.md](TODO.md) file 
 - [x] Step 1: Project Setup
 - [x] Step 2: Cross-Platform Path Resolution
 - [x] Step 3: SQLite Database Access
-- [ ] Step 4: Technology File Location
+- [x] Step 4: Technology File Location
 - [ ] Step 5: Parser Development
 - [ ] Step 6: Technology Data Model
 - [ ] Step 7: Consolidated Technology Database
@@ -94,6 +94,9 @@ npm run lint:fix
 
 # Display Stellaris path information
 npm run path-info
+
+# List technology files
+npm run tech-files
 ```
 
 ## License
