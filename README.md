@@ -20,7 +20,7 @@ This project is currently in early development. See the [TODO.md](TODO.md) file 
 - [x] Step 2: Cross-Platform Path Resolution
 - [x] Step 3: SQLite Database Access
 - [x] Step 4: Technology File Location
-- [ ] Step 5: Parser Development
+- [x] Step 5: Parser Development
 - [ ] Step 6: Technology Data Model
 - [ ] Step 7: Consolidated Technology Database
 - [ ] Step 8: Integration and Testing
@@ -97,6 +97,9 @@ npm run path-info
 
 # List technology files
 npm run tech-files
+
+# Test the technology parser
+npm run parse-test
 ```
 
 ## License

@@ -10,13 +10,16 @@
     "lint:fix": "eslint src/**/*.js tests/**/*.js --fix",
     "path-info": "node src/cli/pathInfo.js",
     "mod-info": "node src/cli/modInfo.js",
-    "tech-files": "node src/cli/techFiles.js"
+    "tech-files": "node src/cli/techFiles.js",
+    "parse-test": "node src/cli/parseTest.js",
+    "test-prerequisites": "node src/cli/testPrerequisites.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "moo": "^0.5.2",
     "nearley": "^2.20.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
