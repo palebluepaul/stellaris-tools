@@ -18,7 +18,7 @@ This project is currently in early development. See the [TODO.md](TODO.md) file 
 
 - [x] Step 1: Project Setup
 - [x] Step 2: Cross-Platform Path Resolution
-- [ ] Step 3: SQLite Database Access
+- [x] Step 3: SQLite Database Access
 - [ ] Step 4: Technology File Location
 - [ ] Step 5: Parser Development
 - [ ] Step 6: Technology Data Model
@@ -39,6 +39,42 @@ npm install
 
 # Run the application
 npm start
+```
+
+## Testing Approach
+
+This project uses a comprehensive testing strategy to ensure reliability and maintainability:
+
+### Unit Tests
+
+Unit tests verify individual components in isolation:
+
+- **Model Tests**: Ensure data models correctly handle various input formats and edge cases
+- **Utility Tests**: Verify utility functions work correctly across platforms
+- **Repository Tests**: Test data access functions with mocked database connections
+
+### Integration Tests
+
+Integration tests verify that components work together correctly:
+
+- **Database Integration**: Test actual database connections and queries against a test database
+- **File System Integration**: Verify file system operations work correctly on the host platform
+
+### Test Fixtures
+
+The project uses test fixtures to provide consistent test data:
+
+- **Test Database**: A SQLite database with predefined test data
+- **Mock Files**: Sample files that mimic the structure of actual game files
+
+Run the tests with:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage report
+npm run test:coverage
 ```
 
 ## Development
