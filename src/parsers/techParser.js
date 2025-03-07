@@ -371,6 +371,26 @@ class TechParser {
 
     return this.extractValue(valueNode);
   }
+
+  /**
+   * Parse technology content directly
+   * @param {string} content - Content of the technology file
+   * @returns {Tech[]} Array of parsed Tech objects
+   */
+  parse(content) {
+    try {
+      // Parse the content
+      const ast = this.parseContent(content);
+      
+      // Process the AST to extract technologies
+      const technologies = this.processTechnologies(ast, '', '');
+      
+      return technologies;
+    } catch (error) {
+      logger.error(`Error parsing content: ${error.message}`);
+      return [];
+    }
+  }
 }
 
 module.exports = TechParser; 

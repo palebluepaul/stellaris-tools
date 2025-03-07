@@ -1,8 +1,4 @@
 {
-  "launcherDb": {
-    "value": "/Users/paulscott/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
-    "expires": 1741286866251
-  },
   "userDataDir": {
     "value": "/Users/paulscott/Documents/Paradox Interactive/Stellaris",
     "expires": 1741369679337
@@ -14,5 +10,9 @@
   "workshopModsDir": {
     "value": "/Users/paulscott/Library/Application Support/Steam/steamapps/workshop/content/281990",
     "expires": 1741369679340
+  },
+  "launcherDb": {
+    "value": "/Users/paulscott/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
+    "expires": 1741359298554
   }
 }

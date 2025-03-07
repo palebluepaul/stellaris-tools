@@ -1,9 +1,86 @@
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 const logger = require('../utils/logger');
 const TechParser = require('../parsers/techParser');
 const TechDatabase = require('../models/techDatabase');
 const modRepository = require('../database/modRepository');
+
+/**
+ * Simple in-memory cache for parsed technology files
+ */
+class TechFileCache {
+  constructor() {
+    this.cache = new Map();
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  /**
+   * Gets a cached file content if available and still valid
+   * @param {string} filePath Path to the file
+   * @param {object} stats File stats from fs.stat
+   * @returns {object|null} Cached content or null if not cached or invalid
+   */
+  get(filePath, stats) {
+    const cacheKey = filePath;
+    const cached = this.cache.get(cacheKey);
+    
+    if (!cached) {
+      this.misses++;
+      return null;
+    }
+    
+    // Check if file has been modified since it was cached
+    if (cached.mtime.getTime() !== stats.mtime.getTime() || 
+        cached.size !== stats.size) {
+      this.misses++;
+      return null;
+    }
+    
+    this.hits++;
+    return cached.data;
+  }
+
+  /**
+   * Stores file content in the cache
+   * @param {string} filePath Path to the file
+   * @param {object} stats File stats from fs.stat
+   * @param {object} data Data to cache
+   */
+  set(filePath, stats, data) {
+    const cacheKey = filePath;
+    this.cache.set(cacheKey, {
+      mtime: stats.mtime,
+      size: stats.size,
+      data
+    });
+  }
+
+  /**
+   * Clears the cache
+   */
+  clear() {
+    this.cache.clear();
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  /**
+   * Gets cache statistics
+   * @returns {object} Cache statistics
+   */
+  getStats() {
+    return {
+      size: this.cache.size,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: this.hits + this.misses > 0 
+        ? (this.hits / (this.hits + this.misses) * 100).toFixed(2) + '%' 
+        : '0%'
+    };
+  }
+}
 
 /**
  * Service for managing technology data
@@ -16,6 +93,7 @@ class TechService {
     this.parser = new TechParser();
     this.database = new TechDatabase();
     this.modRepository = modRepository;
+    this.fileCache = new TechFileCache();
     this._initialized = false;
   }
 
@@ -51,30 +129,36 @@ class TechService {
         await this.initialize();
       }
 
-      logger.info(`Loading technologies from file: ${filePath}`);
+      // Get file stats for caching
+      const stats = await fs.stat(filePath);
       
-      // Check if file exists
-      try {
-        await fs.access(filePath);
-      } catch (error) {
-        logger.error(`File not found: ${filePath}`);
+      // Check if we have a valid cached version
+      let technologies = this.fileCache.get(filePath, stats);
+      
+      if (!technologies) {
+        // Not in cache, need to parse the file
+        const content = await fs.readFile(filePath, 'utf8');
+        technologies = await this.parser.parse(content);
+        
+        // Cache the parsed result
+        this.fileCache.set(filePath, stats, technologies);
+      }
+      
+      if (!technologies || technologies.length === 0) {
         return 0;
       }
-      
-      // Parse the file
-      const technologies = await this.parser.parseFile(filePath, modId);
-      
-      // Add source information
-      for (const tech of technologies) {
+
+      // Add source information to each technology
+      technologies.forEach(tech => {
         tech.sourceFile = filePath;
+        tech.sourceModId = modId;
         tech.sourceModName = modName;
-      }
-      
-      // Add to database
-      const addedCount = this.database.addTechnologies(technologies);
-      
-      logger.info(`Loaded ${addedCount} technologies from ${filePath}`);
-      return addedCount;
+      });
+
+      // Add technologies to the database
+      this.database.addTechnologies(technologies);
+
+      return technologies.length;
     } catch (error) {
       logger.error(`Error loading tech file ${filePath}: ${error.message}`);
       return 0;
@@ -223,35 +307,42 @@ class TechService {
   }
 
   /**
-   * Loads all technologies from the base game and active mods
-   * @param {string} gamePath Path to the Stellaris installation
+   * Loads all technologies from the base game and mods
+   * @param {string} gamePath Path to the game installation
    * @returns {Promise<number>} Total number of technologies loaded
    */
   async loadAllTechnologies(gamePath) {
-    try {
-      if (!this._initialized) {
-        await this.initialize();
-      }
-
-      logger.info('Loading all technologies');
-      
-      // Clear existing technologies
-      this.database.clear();
-      
-      // Load base game technologies
-      const baseGameLoaded = await this.loadBaseGameTechnologies(gamePath);
-      
-      // Load mod technologies
-      const modLoaded = await this.loadModTechnologies(gamePath);
-      
-      const totalLoaded = baseGameLoaded + modLoaded;
-      logger.info(`Loaded ${totalLoaded} technologies in total`);
-      
-      return totalLoaded;
-    } catch (error) {
-      logger.error(`Error loading all technologies: ${error.message}`);
-      return 0;
+    if (!this._initialized) {
+      await this.initialize();
     }
+
+    // Clear the database before loading
+    this.database.clear();
+    
+    // Load base game technologies
+    logger.info('Loading base game technologies...');
+    const baseGameCount = await this.loadBaseGameTechnologies(gamePath);
+    logger.info(`Loaded ${baseGameCount} technologies from base game`);
+    
+    // Load mod technologies
+    logger.info('Loading mod technologies...');
+    const modCount = await this.loadModTechnologies(gamePath);
+    logger.info(`Loaded ${modCount} technologies from mods`);
+    
+    // Build the technology tree
+    logger.info('Building technology tree...');
+    this.database.buildTechTree();
+    
+    // Log cache statistics
+    const cacheStats = this.fileCache.getStats();
+    logger.info(`Cache statistics: ${cacheStats.size} files cached, ${cacheStats.hits} hits, ${cacheStats.misses} misses, ${cacheStats.hitRate} hit rate`);
+    
+    return {
+      totalCount: baseGameCount + modCount,
+      baseGameCount,
+      modCount,
+      cacheStats
+    };
   }
 
   /**

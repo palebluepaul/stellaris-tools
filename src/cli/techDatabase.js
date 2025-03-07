@@ -26,9 +26,16 @@ async function main() {
     logger.info(`Using game path: ${gamePath}`);
     
     // Load all technologies
-    const totalLoaded = await techService.loadAllTechnologies(gamePath);
+    logger.info('Loading technologies...');
+    const startTime = Date.now();
+    const loadResult = await techService.loadAllTechnologies(gamePath);
+    const endTime = Date.now();
     
-    logger.info(`Loaded ${totalLoaded} technologies in total`);
+    const loadTime = (endTime - startTime) / 1000;
+    logger.info(`Loaded ${loadResult.totalCount} technologies in ${loadTime.toFixed(2)} seconds`);
+    logger.info(`- Base game: ${loadResult.baseGameCount} technologies`);
+    logger.info(`- Mods: ${loadResult.modCount} technologies`);
+    logger.info(`- Cache statistics: ${loadResult.cacheStats.size} files, ${loadResult.cacheStats.hitRate} hit rate`);
     
     // Display some statistics
     const allTechs = techService.getAllTechnologies();
@@ -53,6 +60,17 @@ async function main() {
         }
       }
     }
+    
+    // Test loading again to verify caching
+    logger.info('\nTesting cache performance with second load...');
+    const cacheStartTime = Date.now();
+    const cacheLoadResult = await techService.loadAllTechnologies(gamePath);
+    const cacheEndTime = Date.now();
+    
+    const cacheLoadTime = (cacheEndTime - cacheStartTime) / 1000;
+    logger.info(`Second load: ${cacheLoadResult.totalCount} technologies in ${cacheLoadTime.toFixed(2)} seconds`);
+    logger.info(`Cache hit rate: ${cacheLoadResult.cacheStats.hitRate}`);
+    logger.info(`Performance improvement: ${Math.round((1 - cacheLoadTime / loadTime) * 100)}%`);
     
     // Display some example technologies with their prerequisites and dependents
     const exampleTechs = allTechs.slice(0, 5);

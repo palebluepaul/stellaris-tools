@@ -7,6 +7,7 @@ const logger = require('./utils/logger');
 const gamePathDetector = require('./utils/gamePathDetector');
 const db = require('./database/connection');
 const modRepository = require('./database/modRepository');
+const TechService = require('./services/techService');
 
 /**
  * Initialize the application
@@ -60,7 +61,52 @@ async function init() {
       const enabledMods = activePlayset.getEnabledMods();
       logger.debug(`Found ${enabledMods.length} enabled mods`);
       
-      // TODO: Process enabled mods to build tech tree
+      // Initialize tech service
+      logger.info('Initializing technology service...');
+      const techService = new TechService();
+      await techService.initialize();
+      
+      // Load all technologies
+      logger.info('Loading technologies from game and mods...');
+      const startTime = Date.now();
+      const loadResult = await techService.loadAllTechnologies(gameDir);
+      const endTime = Date.now();
+      
+      logger.info(`Loaded ${loadResult.totalCount} technologies in ${(endTime - startTime) / 1000} seconds`);
+      logger.info(`- Base game: ${loadResult.baseGameCount} technologies`);
+      logger.info(`- Mods: ${loadResult.modCount} technologies`);
+      logger.info(`- Cache performance: ${loadResult.cacheStats.hitRate} hit rate`);
+      
+      // Display some statistics
+      const allTechs = techService.getAllTechnologies();
+      const areas = techService.getAllAreas();
+      const categories = techService.getAllCategories();
+      
+      logger.info('Technology Statistics:');
+      logger.info(`- Total technologies: ${allTechs.length}`);
+      logger.info(`- Areas: ${areas.length} (${areas.map(a => a.name).join(', ')})`);
+      logger.info(`- Categories: ${categories.length}`);
+      
+      // TODO: In Phase 2, add save game parsing here
+      
+      // TODO: In Phase 3, add tech tree construction here
+      
+      // TODO: In Phase 4, add visualization here
+      
+      logger.info('Application initialized successfully');
+      
+      // Return the tech service for use by other components
+      return {
+        techService,
+        activePlayset,
+        paths: {
+          userDataDir,
+          launcherDbPath,
+          saveGamesDir,
+          gameDir,
+          workshopModsDir
+        }
+      };
     } else {
       logger.warn('No active playset found');
     }
@@ -68,16 +114,54 @@ async function init() {
     logger.info('Initialization complete');
   } catch (error) {
     logger.error(`Initialization failed: ${error.message}`);
+    logger.error(error.stack);
   } finally {
-    // Disconnect from the database
-    await db.disconnect();
+    // Don't disconnect from the database here, as we may need it later
+    // We'll handle disconnection when the application shuts down
   }
 }
 
-// Run the application
-init().catch(error => {
-  logger.error(`Unhandled error: ${error.message}`);
-  process.exit(1);
-});
+/**
+ * Shutdown the application
+ */
+async function shutdown() {
+  logger.info('Shutting down application...');
+  
+  // Disconnect from the database
+  await db.disconnect();
+  
+  logger.info('Application shutdown complete');
+}
 
-module.exports = { init }; 
+// If this file is run directly, initialize the application
+if (require.main === module) {
+  // Set up process event handlers for graceful shutdown
+  process.on('SIGINT', async () => {
+    logger.info('Received SIGINT signal');
+    await shutdown();
+    process.exit(0);
+  });
+  
+  process.on('SIGTERM', async () => {
+    logger.info('Received SIGTERM signal');
+    await shutdown();
+    process.exit(0);
+  });
+  
+  process.on('uncaughtException', async (error) => {
+    logger.error(`Uncaught exception: ${error.message}`);
+    logger.error(error.stack);
+    await shutdown();
+    process.exit(1);
+  });
+  
+  // Run the application
+  init().catch(async (error) => {
+    logger.error(`Unhandled error: ${error.message}`);
+    logger.error(error.stack);
+    await shutdown();
+    process.exit(1);
+  });
+}
+
+module.exports = { init, shutdown }; 
