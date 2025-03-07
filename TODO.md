@@ -75,6 +75,18 @@ The application will follow a modular architecture with these primary components
 - Search and filter components
 - Visual styling based on technology states
 
+**JavaScript Standards and Frontend Setup:**
+1. Use ES modules (import/export) for frontend code
+2. Set up Vite as the bundler for frontend development
+3. Implement proper module interoperability between backend and frontend
+4. Create a clear API interface for the backend services
+5. Use React for UI components
+6. Implement Tailwind CSS for styling
+7. Ensure proper error handling and loading states
+8. Use TypeScript for type safety (optional)
+9. Follow component-based architecture for UI elements
+10. Implement proper state management for the application
+
 **Tests:**
 1. Unit tests for rendering components
 2. Tests for interactive behaviors

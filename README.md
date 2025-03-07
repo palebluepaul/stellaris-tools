@@ -43,6 +43,26 @@ The application is built with a modular architecture:
 3. **Visualization Module**: Handles the rendering of the tech tree in the UI
 4. **User Interface**: A Node.js front-end application using Tailwind CSS
 
+## JavaScript Standards
+
+The project follows these JavaScript standards:
+
+1. **Module System**: Uses CommonJS module system (`require`/`module.exports`) for backend services
+2. **Code Style**: Follows ESLint recommended rules with additional customizations:
+   - 2-space indentation
+   - Unix line endings
+   - Single quotes for strings
+   - Semicolons required
+3. **Async Patterns**: Uses async/await for asynchronous operations
+4. **Error Handling**: Implements comprehensive try/catch blocks with logging
+5. **Logging**: Uses Winston for structured logging
+6. **Documentation**: Uses JSDoc comments for function and class documentation
+
+When implementing the frontend (Phase 3), we should consider:
+- Using ES modules (import/export) for frontend code
+- Setting up a bundler like Vite for frontend development
+- Ensuring proper module interoperability between backend and frontend
+
 ## Key Components
 
 ### Game Path Detection
@@ -112,25 +132,50 @@ The technology tree provides insights into:
 npm install
 ```
 
-### Running the Application
+### Running the Backend Services
 
-To start the application:
+To start the main application:
 
 ```bash
 npm start
 ```
 
+This initializes the core services, detects game paths, connects to the launcher database, and loads technologies from the base game and mods.
+
 ### CLI Commands
 
 The application includes several command-line tools for testing and debugging:
 
-- `npm run path-info`: Display detected game paths
-- `npm run mod-info`: Display information about installed mods
+- `npm run path-info`: Display detected game paths (installation, user data, mods, etc.)
+- `npm run mod-info`: Display information about installed mods and active playset
 - `npm run tech-files`: List technology files found in the game and mods
-- `npm run parse-test`: Test the technology file parser
-- `npm run test-prerequisites`: Test prerequisite resolution
-- `npm run tech-database`: Test the technology database
-- `npm run tech-tree`: Test the technology tree functionality
+- `npm run parse-test`: Test the technology file parser with sample files
+- `npm run test-prerequisites`: Test prerequisite resolution for technologies
+- `npm run tech-database`: Test the technology database and display statistics
+- `npm run tech-tree`: Test the technology tree functionality and display tree statistics
+
+Example output from `npm run tech-tree`:
+
+```
+=== Technology Tree Statistics ===
+Total technologies: 2408
+Root technologies: 560
+Maximum depth: 14
+Maximum width: 573
+
+=== Technologies by Area ===
+physics: 697 technologies
+society: 789 technologies
+engineering: 846 technologies
+
+=== Technologies by Tier ===
+Tier 0: 120 technologies
+Tier 1: 176 technologies
+Tier 2: 295 technologies
+Tier 3: 280 technologies
+Tier 4: 194 technologies
+Tier 5: 620 technologies
+```
 
 ## Development
 
