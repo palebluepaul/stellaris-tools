@@ -21,8 +21,8 @@ This project is currently in early development. See the [TODO.md](TODO.md) file 
 - [x] Step 3: SQLite Database Access
 - [x] Step 4: Technology File Location
 - [x] Step 5: Parser Development
-- [ ] Step 6: Technology Data Model
-- [ ] Step 7: Consolidated Technology Database
+- [x] Step 6: Technology Data Model
+- [x] Step 7: Consolidated Technology Database
 - [ ] Step 8: Integration and Testing
 - [ ] Step 9: Performance Optimization and Caching
 - [ ] Step 10: Documentation and Cleanup
@@ -39,6 +39,28 @@ npm install
 
 # Run the application
 npm start
+```
+
+## Usage
+
+```bash
+# Display Stellaris path information
+npm run path-info
+
+# List active mods
+npm run mod-info
+
+# List technology files
+npm run tech-files
+
+# Test the technology parser
+npm run parse-test
+
+# Test technology prerequisites
+npm run test-prerequisites
+
+# Load and display technology database
+npm run tech-database
 ```
 
 ## Testing Approach
@@ -91,15 +113,6 @@ npm run lint
 
 # Fix linting issues
 npm run lint:fix
-
-# Display Stellaris path information
-npm run path-info
-
-# List technology files
-npm run tech-files
-
-# Test the technology parser
-npm run parse-test
 ```
 
 ## License

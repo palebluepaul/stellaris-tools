@@ -12,7 +12,8 @@
     "mod-info": "node src/cli/modInfo.js",
     "tech-files": "node src/cli/techFiles.js",
     "parse-test": "node src/cli/parseTest.js",
-    "test-prerequisites": "node src/cli/testPrerequisites.js"
+    "test-prerequisites": "node src/cli/testPrerequisites.js",
+    "tech-database": "node src/cli/techDatabase.js"
   },
   "keywords": [],
   "author": "",
