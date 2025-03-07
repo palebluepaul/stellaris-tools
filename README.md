@@ -76,6 +76,25 @@ The application builds a comprehensive technology database that includes:
 
 The application includes a simple caching system to avoid re-parsing files that haven't changed, which significantly improves performance on subsequent runs.
 
+### Technology Tree
+
+The application builds a comprehensive technology tree that includes:
+
+- Hierarchical structure based on prerequisites
+- Support for complex prerequisite relationships
+- Path tracing from any technology to its root
+- Efficient search functionality
+- Support for filtering by area, category, and tier
+- Handling of mod-added technologies and conflicts
+
+The technology tree provides insights into:
+
+- Root technologies (those with no prerequisites)
+- Maximum depth and width of the tree
+- Technologies at each depth level
+- Parent-child relationships between technologies
+- Complete paths from any technology to its root
+
 ## Usage
 
 ### Prerequisites
@@ -111,6 +130,7 @@ The application includes several command-line tools for testing and debugging:
 - `npm run parse-test`: Test the technology file parser
 - `npm run test-prerequisites`: Test prerequisite resolution
 - `npm run tech-database`: Test the technology database
+- `npm run tech-tree`: Test the technology tree functionality
 
 ## Development
 
@@ -135,7 +155,7 @@ npm run build
 ## Implementation Status
 
 - ✅ Phase 1: Data Collection and Base Game Parsing
-- ⬜ Phase 2: Technology Tree Construction
+- ✅ Phase 2: Technology Tree Construction
 - ⬜ Phase 3: Interactive Visualization
 - ⬜ Phase 4: Save Game Parsing
 - ⬜ Phase 5: Application Integration and Polish

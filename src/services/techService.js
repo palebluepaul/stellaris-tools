@@ -433,6 +433,14 @@ class TechService {
     // Technology files typically have a .txt extension
     return fileName.endsWith('.txt');
   }
+
+  /**
+   * Gets the technology database
+   * @returns {TechDatabase} The technology database
+   */
+  getTechDatabase() {
+    return this.database;
+  }
 }
 
 module.exports = TechService; 

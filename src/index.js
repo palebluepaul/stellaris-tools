@@ -8,6 +8,7 @@ const gamePathDetector = require('./utils/gamePathDetector');
 const db = require('./database/connection');
 const modRepository = require('./database/modRepository');
 const TechService = require('./services/techService');
+const TechTreeService = require('./services/techTreeService');
 
 /**
  * Initialize the application
@@ -24,7 +25,7 @@ async function init() {
     const userDataDir = await gamePathDetector.getUserDataDir();
     const launcherDbPath = await gamePathDetector.getLauncherDbPath();
     const saveGamesDir = await gamePathDetector.getSaveGamesDir();
-    const gameDir = await gamePathDetector.getGameDir();
+    const gameDir = await gamePathDetector.getGameInstallDir();
     const workshopModsDir = await gamePathDetector.getWorkshopModsDir();
     
     // Log detected paths
@@ -87,17 +88,27 @@ async function init() {
       logger.info(`- Areas: ${areas.length} (${areas.map(a => a.name).join(', ')})`);
       logger.info(`- Categories: ${categories.length}`);
       
-      // TODO: In Phase 2, add save game parsing here
+      // Initialize tech tree service
+      logger.info('Initializing technology tree service...');
+      const techTreeService = new TechTreeService(techService);
+      await techTreeService.initialize();
       
-      // TODO: In Phase 3, add tech tree construction here
+      // Display tech tree statistics
+      logger.info('Technology Tree Statistics:');
+      logger.info(`- Root technologies: ${techTreeService.getRootTechnologies().length}`);
+      logger.info(`- Maximum depth: ${techTreeService.getMaxDepth()}`);
+      logger.info(`- Maximum width: ${techTreeService.getMaxWidth()}`);
+      
+      // TODO: In Phase 3, add save game parsing here
       
       // TODO: In Phase 4, add visualization here
       
       logger.info('Application initialized successfully');
       
-      // Return the tech service for use by other components
+      // Return the services for use by other components
       return {
         techService,
+        techTreeService,
         activePlayset,
         paths: {
           userDataDir,
