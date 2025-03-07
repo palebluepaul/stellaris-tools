@@ -1,120 +1,150 @@
 # Stellaris Tech Tree Viewer
 
-An interactive tech tree visualization tool for Stellaris based on the user's mod set and save game data.
+An interactive technology tree visualization tool for Stellaris that works with mods and save games.
 
-## Features
+## Overview
 
-- Read installed Stellaris mods from the user's active mod set (cross-platform)
-- Read the user's last save game to determine researched technologies (cross-platform)
-- Generate an interactive tech tree visualization
-- Highlight researched technologies and missing prerequisites
-- Display friendly names for conditions and variables
+This application creates an interactive tech tree visualization for Stellaris based on the user's mod set and save game data. It:
 
-## Development Status
+1. Reads installed Stellaris mods from the user's active mod set (cross-platform)
+2. Reads the user's last save game to determine researched technologies (cross-platform)
+3. Generates an interactive tech tree visualization
+4. Highlights researched technologies and missing prerequisites
+5. Displays friendly names for conditions and variables
 
-This project is currently in early development. See the [TODO.md](TODO.md) file for the detailed development plan.
+## Project Structure
 
-### Current Phase: Phase 1 - Data Collection and Base Game Parsing
+The application follows a modular architecture with these primary components:
 
-- [x] Step 1: Project Setup
-- [x] Step 2: Cross-Platform Path Resolution
-- [x] Step 3: SQLite Database Access
-- [x] Step 4: Technology File Location
-- [x] Step 5: Parser Development
-- [x] Step 6: Technology Data Model
-- [x] Step 7: Consolidated Technology Database
-- [ ] Step 8: Integration and Testing
-- [ ] Step 9: Performance Optimization and Caching
-- [ ] Step 10: Documentation and Cleanup
-
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/stellaris-tech-tree-viewer.git
-cd stellaris-tech-tree-viewer
-
-# Install dependencies
-npm install
-
-# Run the application
-npm start
 ```
+stellaris-tools/
+├── src/
+│   ├── cli/            # Command-line interface tools
+│   ├── config/         # Configuration settings
+│   ├── database/       # Database access layer
+│   ├── models/         # Data models
+│   ├── parsers/        # File parsers
+│   ├── services/       # Business logic services
+│   ├── utils/          # Utility functions
+│   └── index.js        # Main application entry point
+├── tests/              # Test files
+├── .eslintrc.json      # ESLint configuration
+├── jest.config.js      # Jest configuration
+├── package.json        # Project dependencies
+└── README.md           # This file
+```
+
+## Architecture
+
+The application is built with a modular architecture:
+
+1. **Data Collection Module**: Responsible for gathering all required data from game files, mods, and save games
+2. **Data Processing Module**: Responsible for parsing, merging, and preparing the data for visualization
+3. **Visualization Module**: Handles the rendering of the tech tree in the UI
+4. **User Interface**: A Node.js front-end application using Tailwind CSS
+
+## Key Components
+
+### Game Path Detection
+
+The application automatically detects Stellaris installation paths and user data directories on different platforms:
+
+- Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\`
+- macOS: `~/Documents/Paradox Interactive/Stellaris/`
+
+### Mod Database Access
+
+The application reads the Stellaris launcher database to determine the active mod set:
+
+- Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\launcher-v2.sqlite`
+- macOS: `~/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite`
+
+### Technology File Parsing
+
+The application uses a custom parser built with Nearley.js to parse Stellaris technology definition files, which have a complex nested structure.
+
+### Technology Database
+
+The application builds a comprehensive technology database that includes:
+
+- Base game technologies
+- Mod-added technologies
+- Technology relationships (prerequisites and dependents)
+- Technology metadata (area, tier, cost, etc.)
+
+### Caching System
+
+The application includes a simple caching system to avoid re-parsing files that haven't changed, which significantly improves performance on subsequent runs.
 
 ## Usage
 
-```bash
-# Display Stellaris path information
-npm run path-info
+### Prerequisites
 
-# List active mods
-npm run mod-info
+- Node.js 14 or later
+- Stellaris game installation
+- (Optional) Stellaris mods installed through the launcher
 
-# List technology files
-npm run tech-files
+### Installation
 
-# Test the technology parser
-npm run parse-test
-
-# Test technology prerequisites
-npm run test-prerequisites
-
-# Load and display technology database
-npm run tech-database
-```
-
-## Testing Approach
-
-This project uses a comprehensive testing strategy to ensure reliability and maintainability:
-
-### Unit Tests
-
-Unit tests verify individual components in isolation:
-
-- **Model Tests**: Ensure data models correctly handle various input formats and edge cases
-- **Utility Tests**: Verify utility functions work correctly across platforms
-- **Repository Tests**: Test data access functions with mocked database connections
-
-### Integration Tests
-
-Integration tests verify that components work together correctly:
-
-- **Database Integration**: Test actual database connections and queries against a test database
-- **File System Integration**: Verify file system operations work correctly on the host platform
-
-### Test Fixtures
-
-The project uses test fixtures to provide consistent test data:
-
-- **Test Database**: A SQLite database with predefined test data
-- **Mock Files**: Sample files that mimic the structure of actual game files
-
-Run the tests with:
+1. Clone the repository
+2. Install dependencies:
 
 ```bash
-# Run all tests
-npm test
-
-# Run tests with coverage report
-npm run test:coverage
+npm install
 ```
+
+### Running the Application
+
+To start the application:
+
+```bash
+npm start
+```
+
+### CLI Commands
+
+The application includes several command-line tools for testing and debugging:
+
+- `npm run path-info`: Display detected game paths
+- `npm run mod-info`: Display information about installed mods
+- `npm run tech-files`: List technology files found in the game and mods
+- `npm run parse-test`: Test the technology file parser
+- `npm run test-prerequisites`: Test prerequisite resolution
+- `npm run tech-database`: Test the technology database
 
 ## Development
 
+### Running Tests
+
 ```bash
-# Run tests
 npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run linting
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
 ```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+### Building
+
+```bash
+npm run build
+```
+
+## Implementation Status
+
+- ✅ Phase 1: Data Collection and Base Game Parsing
+- ⬜ Phase 2: Save Game Parsing
+- ⬜ Phase 3: Technology Tree Construction
+- ⬜ Phase 4: Interactive Visualization
+- ⬜ Phase 5: Application Integration and Polish
 
 ## License
 
-ISC 
+This project is licensed under the ISC License.
+
+## Acknowledgements
+
+- Paradox Interactive for creating Stellaris
+- The Stellaris modding community for their contributions 
