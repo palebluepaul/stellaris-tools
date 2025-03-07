@@ -29,7 +29,57 @@ The application will follow a modular architecture with these primary components
 - Added caching system for improved performance
 - Created detailed documentation for all components
 
-### Phase 2: Save Game Parsing
+### Phase 2: Technology Tree Construction
+
+**Tasks:**
+1. Develop data structures to represent technologies and their relationships
+2. Implement logic to handle mod overrides and conflicts
+3. Create tech tree hierarchy based on prerequisites
+4. Implement friendly name resolution for conditions and requirements
+5. Develop state tracking for researched technologies
+6. Design and implement technology categorization based on fields and areas
+
+**Key Components:**
+- Technology data model (id, name, area, tier, prerequisites, category, etc.)
+- Tree construction algorithm to handle complex prerequisite relationships
+- Name resolution system using localization files
+- State manager for tracking researched technologies
+
+**Tests:**
+1. Unit tests for technology data model
+2. Tests for technology tree construction with various prerequisite patterns
+3. Tests for handling mod conflicts and overrides
+4. Tests for localization and name resolution
+5. Tests for correctly identifying researched technologies
+6. Boundary tests for technologies with multiple or complex prerequisites
+
+### Phase 3: Interactive Visualization
+
+**Tasks:**
+1. Design the visual representation of the tech tree
+2. Implement interactive elements (zooming, panning, selecting)
+3. Create visual distinction between researched, available, and locked technologies
+4. Implement hover/click behaviors to display detailed information
+5. Design and implement search and filtering functionality
+6. Add progress indicators for partially researched technologies
+
+**Components:**
+- SVG-based tech tree visualization
+- Zoom and pan controls
+- Technology card components
+- Detail panel for selected technologies
+- Search and filter components
+- Visual styling based on technology states
+
+**Tests:**
+1. Unit tests for rendering components
+2. Tests for interactive behaviors
+3. Performance tests with large tech trees
+4. Accessibility tests
+5. Cross-browser compatibility tests
+6. Tests for correct visual state representation
+
+### Phase 4: Save Game Parsing
 
 **Tasks:**
 1. Develop a save game parsing module with compression detection and decompression capabilities
@@ -71,56 +121,6 @@ The application will follow a modular architecture with these primary components
 - Adjust save game paths for cross-platform compatibility:
   - Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\save games\`
   - macOS: `~/Documents/Paradox Interactive/Stellaris/save games/`
-
-### Phase 3: Technology Tree Construction
-
-**Tasks:**
-1. Develop data structures to represent technologies and their relationships
-2. Implement logic to handle mod overrides and conflicts
-3. Create tech tree hierarchy based on prerequisites
-4. Implement friendly name resolution for conditions and requirements
-5. Develop state tracking for researched technologies
-6. Design and implement technology categorization based on fields and areas
-
-**Key Components:**
-- Technology data model (id, name, area, tier, prerequisites, category, etc.)
-- Tree construction algorithm to handle complex prerequisite relationships
-- Name resolution system using localization files
-- State manager for tracking researched technologies
-
-**Tests:**
-1. Unit tests for technology data model
-2. Tests for technology tree construction with various prerequisite patterns
-3. Tests for handling mod conflicts and overrides
-4. Tests for localization and name resolution
-5. Tests for correctly identifying researched technologies
-6. Boundary tests for technologies with multiple or complex prerequisites
-
-### Phase 4: Interactive Visualization
-
-**Tasks:**
-1. Design the visual representation of the tech tree
-2. Implement interactive elements (zooming, panning, selecting)
-3. Create visual distinction between researched, available, and locked technologies
-4. Implement hover/click behaviors to display detailed information
-5. Design and implement search and filtering functionality
-6. Add progress indicators for partially researched technologies
-
-**Components:**
-- SVG-based tech tree visualization
-- Zoom and pan controls
-- Technology card components
-- Detail panel for selected technologies
-- Search and filter components
-- Visual styling based on technology states
-
-**Tests:**
-1. Unit tests for rendering components
-2. Tests for interactive behaviors
-3. Performance tests with large tech trees
-4. Accessibility tests
-5. Cross-browser compatibility tests
-6. Tests for correct visual state representation
 
 ### Phase 5: Application Integration and Polish (Cross-platform)
 

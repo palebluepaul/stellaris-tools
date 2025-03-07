@@ -135,9 +135,9 @@ npm run build
 ## Implementation Status
 
 - ✅ Phase 1: Data Collection and Base Game Parsing
-- ⬜ Phase 2: Save Game Parsing
-- ⬜ Phase 3: Technology Tree Construction
-- ⬜ Phase 4: Interactive Visualization
+- ⬜ Phase 2: Technology Tree Construction
+- ⬜ Phase 3: Interactive Visualization
+- ⬜ Phase 4: Save Game Parsing
 - ⬜ Phase 5: Application Integration and Polish
 
 ## License
