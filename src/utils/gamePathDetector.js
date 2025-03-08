@@ -16,6 +16,7 @@ const CACHE_KEYS = {
   USER_DATA_DIR: 'userDataDir',
   LAUNCHER_DB: 'launcherDb',
   SAVE_GAMES_DIR: 'saveGamesDir',
+  PLATFORM_INFO: 'platformInfo',
 };
 
 /**
@@ -24,6 +25,47 @@ const CACHE_KEYS = {
 class GamePathDetector {
   constructor() {
     this.initialized = false;
+    this.platformInfo = null;
+  }
+
+  /**
+   * Get current platform information
+   * @returns {Object} Platform information
+   * @private
+   */
+  _getCurrentPlatformInfo() {
+    return {
+      platform: process.platform,
+      isWSL: PathResolver.isWSL()
+    };
+  }
+
+  /**
+   * Check if the platform has changed since the last run
+   * @returns {boolean} True if the platform has changed
+   * @private
+   */
+  _hasPlatformChanged() {
+    const cachedPlatformInfo = pathCache.get(CACHE_KEYS.PLATFORM_INFO);
+    const currentPlatformInfo = this._getCurrentPlatformInfo();
+    
+    if (!cachedPlatformInfo) {
+      logger.debug('No cached platform info found, assuming platform change');
+      return true;
+    }
+    
+    const platformChanged = (
+      cachedPlatformInfo.platform !== currentPlatformInfo.platform ||
+      cachedPlatformInfo.isWSL !== currentPlatformInfo.isWSL
+    );
+    
+    if (platformChanged) {
+      logger.debug(`Platform changed: ${JSON.stringify(cachedPlatformInfo)} -> ${JSON.stringify(currentPlatformInfo)}`);
+    } else {
+      logger.debug(`Platform unchanged: ${JSON.stringify(currentPlatformInfo)}`);
+    }
+    
+    return platformChanged;
   }
 
   /**
@@ -38,6 +80,18 @@ class GamePathDetector {
     try {
       // Load the path cache
       await pathCache.load();
+      
+      // Check if the platform has changed
+      if (this._hasPlatformChanged()) {
+        logger.info('Platform has changed, invalidating path cache');
+        await this.invalidateCache();
+        
+        // Store the current platform info
+        const platformInfo = this._getCurrentPlatformInfo();
+        pathCache.set(CACHE_KEYS.PLATFORM_INFO, platformInfo, CACHE_TTL.LONG);
+        await pathCache.save();
+      }
+      
       this.initialized = true;
       return true;
     } catch (error) {
@@ -58,12 +112,13 @@ class GamePathDetector {
     if (!forceRefresh) {
       const cachedPath = pathCache.get(CACHE_KEYS.GAME_INSTALL_DIR);
       if (cachedPath) {
-        logger.debug(`Using cached game installation directory: ${cachedPath}`);
+        logger.debug(`CACHE HIT: Using cached game installation directory: ${cachedPath}`);
         return cachedPath;
       }
     }
 
     // Resolve the path
+    logger.debug(`CACHE MISS: Resolving game installation directory`);
     const installDir = await PathResolver.getGameInstallDir();
     
     if (installDir) {
@@ -87,12 +142,13 @@ class GamePathDetector {
     if (!forceRefresh) {
       const cachedPath = pathCache.get(CACHE_KEYS.WORKSHOP_MODS_DIR);
       if (cachedPath) {
-        logger.debug(`Using cached workshop mods directory: ${cachedPath}`);
+        logger.debug(`CACHE HIT: Using cached workshop mods directory: ${cachedPath}`);
         return cachedPath;
       }
     }
 
     // Resolve the path
+    logger.debug(`CACHE MISS: Resolving workshop mods directory`);
     const workshopDir = await PathResolver.getWorkshopModsDir();
     
     if (workshopDir) {
@@ -116,12 +172,13 @@ class GamePathDetector {
     if (!forceRefresh) {
       const cachedPath = pathCache.get(CACHE_KEYS.USER_DATA_DIR);
       if (cachedPath) {
-        logger.debug(`Using cached user data directory: ${cachedPath}`);
+        logger.debug(`CACHE HIT: Using cached user data directory: ${cachedPath}`);
         return cachedPath;
       }
     }
 
     // Resolve the path
+    logger.debug(`CACHE MISS: Resolving user data directory`);
     const userDataDir = PathResolver.getStellarisUserDataDir();
     
     // Validate the path
@@ -150,12 +207,13 @@ class GamePathDetector {
     if (!forceRefresh) {
       const cachedPath = pathCache.get(CACHE_KEYS.LAUNCHER_DB);
       if (cachedPath) {
-        logger.debug(`Using cached launcher database path: ${cachedPath}`);
+        logger.debug(`CACHE HIT: Using cached launcher database path: ${cachedPath}`);
         return cachedPath;
       }
     }
 
     // Resolve the path
+    logger.debug(`CACHE MISS: Resolving launcher database path`);
     const launcherDbPath = PathResolver.getLauncherDbPath();
     
     // Validate the path
@@ -184,12 +242,13 @@ class GamePathDetector {
     if (!forceRefresh) {
       const cachedPath = pathCache.get(CACHE_KEYS.SAVE_GAMES_DIR);
       if (cachedPath) {
-        logger.debug(`Using cached save games directory: ${cachedPath}`);
+        logger.debug(`CACHE HIT: Using cached save games directory: ${cachedPath}`);
         return cachedPath;
       }
     }
 
     // Resolve the path
+    logger.debug(`CACHE MISS: Resolving save games directory`);
     const saveGamesDir = PathResolver.getSaveGamesDir();
     
     // Validate the path

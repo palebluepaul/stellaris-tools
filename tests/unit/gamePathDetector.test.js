@@ -38,7 +38,9 @@ describe('GamePathDetector', () => {
 
   describe('initialize', () => {
     test('should load the path cache', async () => {
-      pathCache.load.mockResolvedValue(true);
+      pathCache.load.mockResolvedValueOnce(true);
+      
+      jest.spyOn(gamePathDetector, '_hasPlatformChanged').mockReturnValueOnce(false);
       
       const result = await gamePathDetector.initialize();
       

@@ -1,39 +1,64 @@
 const config = require('../../src/config');
 const path = require('path');
 const os = require('os');
+const PathResolver = require('../../src/utils/pathResolver');
+
+// Mock PathResolver
+jest.mock('../../src/utils/pathResolver', () => ({
+  getHomeDir: jest.fn(),
+  getDocumentsDir: jest.fn(),
+  getStellarisUserDataDir: jest.fn(),
+  getLauncherDbPath: jest.fn(),
+  getSaveGamesDir: jest.fn(),
+  isWSL: jest.fn()
+}));
 
 describe('Configuration Module', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Set up default mock implementations
+    PathResolver.getHomeDir.mockReturnValue(os.homedir());
+    PathResolver.getDocumentsDir.mockReturnValue(path.join(os.homedir(), 'Documents'));
+    PathResolver.getStellarisUserDataDir.mockReturnValue(path.join(os.homedir(), 'Documents', 'Paradox Interactive', 'Stellaris'));
+    PathResolver.getLauncherDbPath.mockReturnValue(path.join(os.homedir(), 'Documents', 'Paradox Interactive', 'Stellaris', 'launcher-v2.sqlite'));
+    PathResolver.getSaveGamesDir.mockReturnValue(path.join(os.homedir(), 'Documents', 'Paradox Interactive', 'Stellaris', 'save games'));
+    PathResolver.isWSL.mockReturnValue(false);
+  });
+
   test('should have homedir property', () => {
-    expect(config.homedir).toBe(os.homedir());
+    expect(config.homedir).toBe(PathResolver.getHomeDir());
+    expect(PathResolver.getHomeDir).toHaveBeenCalled();
   });
 
   test('should have documentsPath property', () => {
-    let expectedPath;
-    switch (process.platform) {
-    case 'win32':
-      expectedPath = path.join(os.homedir(), 'Documents');
-      break;
-    case 'darwin':
-      expectedPath = path.join(os.homedir(), 'Documents');
-      break;
-    default:
-      expectedPath = path.join(os.homedir(), '.local', 'share');
-    }
-    expect(config.documentsPath).toBe(expectedPath);
+    expect(config.documentsPath).toBe(PathResolver.getDocumentsDir());
+    expect(PathResolver.getDocumentsDir).toHaveBeenCalled();
   });
 
   test('should have stellarisUserDataPath property', () => {
-    const expectedPath = path.join(config.documentsPath, 'Paradox Interactive', 'Stellaris');
-    expect(config.stellarisUserDataPath).toBe(expectedPath);
+    expect(config.stellarisUserDataPath).toBe(PathResolver.getStellarisUserDataDir());
+    expect(PathResolver.getStellarisUserDataDir).toHaveBeenCalled();
   });
 
   test('should have launcherDbPath property', () => {
-    const expectedPath = path.join(config.stellarisUserDataPath, 'launcher-v2.sqlite');
-    expect(config.launcherDbPath).toBe(expectedPath);
+    expect(config.launcherDbPath).toBe(PathResolver.getLauncherDbPath());
+    expect(PathResolver.getLauncherDbPath).toHaveBeenCalled();
   });
 
   test('should have saveGamesPath property', () => {
-    const expectedPath = path.join(config.stellarisUserDataPath, 'save games');
-    expect(config.saveGamesPath).toBe(expectedPath);
+    expect(config.saveGamesPath).toBe(PathResolver.getSaveGamesDir());
+    expect(PathResolver.getSaveGamesDir).toHaveBeenCalled();
+  });
+
+  test('should handle WSL paths correctly', () => {
+    // Mock WSL environment
+    PathResolver.isWSL.mockReturnValue(true);
+    PathResolver.getHomeDir.mockReturnValue('/mnt/c/Users/testuser');
+    PathResolver.getDocumentsDir.mockReturnValue('/mnt/c/Users/testuser/Documents');
+    PathResolver.getStellarisUserDataDir.mockReturnValue('/mnt/c/Users/testuser/Documents/Paradox Interactive/Stellaris');
+    
+    expect(config.homedir).toBe('/mnt/c/Users/testuser');
+    expect(config.documentsPath).toBe('/mnt/c/Users/testuser/Documents');
+    expect(config.stellarisUserDataPath).toBe('/mnt/c/Users/testuser/Documents/Paradox Interactive/Stellaris');
   });
 }); 

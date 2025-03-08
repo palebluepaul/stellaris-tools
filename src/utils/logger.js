@@ -4,6 +4,9 @@ const path = require('path');
 // Determine if we're in a test environment
 const isTest = process.env.NODE_ENV === 'test';
 
+// Set the default log level based on the environment
+const defaultLogLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
+
 // Configure transports
 const transports = [
   // Console output
@@ -44,7 +47,7 @@ if (!isTest) {
  * Logger configuration using Winston
  */
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL || defaultLogLevel,
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ level, message, timestamp }) => {

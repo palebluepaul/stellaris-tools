@@ -1,36 +1,32 @@
 const path = require('path');
 const os = require('os');
+const PathResolver = require('../utils/pathResolver');
 
 /**
  * Cross-platform path resolution for Stellaris game files
  */
 const config = {
   // Base paths
-  homedir: os.homedir(),
+  get homedir() {
+    return PathResolver.getHomeDir();
+  },
   
   // Platform-specific paths
   get documentsPath() {
-    switch (process.platform) {
-    case 'win32':
-      return path.join(this.homedir, 'Documents');
-    case 'darwin':
-      return path.join(this.homedir, 'Documents');
-    default:
-      return path.join(this.homedir, '.local', 'share');
-    }
+    return PathResolver.getDocumentsDir();
   },
   
   // Stellaris paths
   get stellarisUserDataPath() {
-    return path.join(this.documentsPath, 'Paradox Interactive', 'Stellaris');
+    return PathResolver.getStellarisUserDataDir();
   },
   
   get launcherDbPath() {
-    return path.join(this.stellarisUserDataPath, 'launcher-v2.sqlite');
+    return PathResolver.getLauncherDbPath();
   },
   
   get saveGamesPath() {
-    return path.join(this.stellarisUserDataPath, 'save games');
+    return PathResolver.getSaveGamesDir();
   },
   
   // Application paths

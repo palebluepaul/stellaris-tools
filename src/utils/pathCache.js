@@ -9,6 +9,43 @@ class PathCache {
   constructor() {
     this.cache = new Map();
     this.cacheFile = path.join(process.cwd(), '.cache', 'path-cache.json');
+    this.platformInfo = this._getPlatformInfo();
+  }
+
+  /**
+   * Get platform information for cache validation
+   * @returns {Object} Platform information
+   * @private
+   */
+  _getPlatformInfo() {
+    // Detect if running in WSL
+    let isWSL = false;
+    try {
+      const output = require('child_process').execSync('cat /proc/version').toString().toLowerCase();
+      isWSL = output.includes('microsoft') || output.includes('wsl');
+    } catch (error) {
+      // Not WSL or can't determine
+    }
+
+    return {
+      platform: process.platform,
+      isWSL: isWSL
+    };
+  }
+
+  /**
+   * Check if the current platform matches the cached platform
+   * @returns {boolean} True if platforms match
+   * @private
+   */
+  _isPlatformMatch(cachedInfo) {
+    if (!cachedInfo) return false;
+    
+    const currentInfo = this._getPlatformInfo();
+    return (
+      cachedInfo.platform === currentInfo.platform &&
+      cachedInfo.isWSL === currentInfo.isWSL
+    );
   }
 
   /**
@@ -72,9 +109,13 @@ class PathCache {
       await fs.mkdir(path.dirname(this.cacheFile), { recursive: true });
       
       // Convert the cache to a serializable object
-      const serialized = {};
+      const serialized = {
+        platformInfo: this.platformInfo,
+        entries: {}
+      };
+      
       for (const [key, entry] of this.cache.entries()) {
-        serialized[key] = entry;
+        serialized.entries[key] = entry;
       }
       
       // Write the cache to disk
@@ -103,9 +144,24 @@ class PathCache {
       // Clear the current cache
       this.clear();
       
+      // Check if the platform has changed
+      if (!this._isPlatformMatch(serialized.platformInfo)) {
+        logger.info('Platform changed, invalidating path cache');
+        return false;
+      }
+      
       // Populate the cache with the loaded data
-      for (const [key, entry] of Object.entries(serialized)) {
-        this.cache.set(key, entry);
+      if (serialized.entries) {
+        for (const [key, entry] of Object.entries(serialized.entries)) {
+          this.cache.set(key, entry);
+        }
+      } else if (serialized) {
+        // Handle legacy cache format (backward compatibility)
+        for (const [key, entry] of Object.entries(serialized)) {
+          if (key !== 'platformInfo') {
+            this.cache.set(key, entry);
+          }
+        }
       }
       
       logger.debug('Path cache loaded from disk');
