@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { MoonIcon, SunIcon } from '@chakra-ui/icons'
 import DebugPanel from './components/DebugPanel'
+import TechTree from './components/TechTree/TechTree'
 
 function App() {
   // Color mode toggle
@@ -22,7 +23,17 @@ function App() {
     appState: 'initialized',
     timestamp: new Date().toISOString(),
     version: '0.1.0',
-    colorMode: colorMode
+    colorMode: colorMode,
+    phase: 'Phase 1',
+    stage: 'Stage 1 - React Flow Integration',
+    features: {
+      minimap: {
+        enabled: true,
+        pannable: true,
+        zoomable: true
+      },
+      layout: 'auto-positioned by category and tier'
+    }
   });
 
   // Update debug data every 5 seconds to demonstrate reactivity
@@ -43,8 +54,8 @@ function App() {
 
   return (
     <Box bg={bgColor} color={textColor} minH="100vh" pb="100px">
-      <Container maxW="container.xl" pt={10}>
-        <Flex justifyContent="flex-end" mb={4}>
+      <Container maxW="100%" px={2} pt={2} h="calc(100vh - 100px)">
+        <Flex justifyContent="flex-end" mb={1}>
           <IconButton
             aria-label="Toggle color mode"
             icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
@@ -54,26 +65,27 @@ function App() {
           />
         </Flex>
         
-        <VStack spacing={8} align="stretch">
-          <Heading as="h1" size="2xl" textAlign="center">
+        <VStack spacing={2} align="stretch" h="calc(100% - 80px)">
+          <Heading as="h1" size="lg" textAlign="center">
             Stellaris Tech Tree Viewer
           </Heading>
           
-          <Text fontSize="lg" textAlign="center">
+          <Text fontSize="sm" textAlign="center" mb={0}>
             An interactive visualization of the Stellaris technology tree
           </Text>
           
-          {/* Main content will go here in future stages */}
+          {/* Main content - Tech Tree */}
           <Box 
-            p={8} 
+            p={2} 
             borderWidth="1px" 
             borderRadius="lg" 
             bg={useColorModeValue('white', 'gray.800')}
+            width="100%"
+            flex="1"
+            display="flex"
+            flexDirection="column"
           >
-            <Text>
-              Welcome to Phase 1, Stage 0 of the Stellaris Tech Tree Viewer. 
-              This is a basic setup with Chakra UI and a collapsible debug panel.
-            </Text>
+            <TechTree />
           </Box>
         </VStack>
       </Container>
