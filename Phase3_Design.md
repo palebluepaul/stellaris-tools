@@ -12,17 +12,17 @@ This phase focuses on creating an interactive, performant, and user-friendly vis
 - **UX Best Practices**: Include tooltips, loading indicators, clear error messages, and responsive design.
 
 ## Technical Components
-- **Visualization Library**: Use D3.js or similar for scalable vector graphics (SVG) rendering.
+- **Visualization Library**: Use React Flow for interactive node-based diagrams with built-in zoom, pan, and selection capabilities.
 - **Frontend Framework**: React for component-based UI development.
-- **Styling**: Tailwind CSS for responsive and modern styling.
+- **Styling**: Chakra UI for accessible, themeable components and responsive styling.
 - **Bundler**: Vite for efficient frontend development and bundling.
 
 ## Implementation Details
-- **Zoom and Pan**: Implement smooth zooming and panning using D3.js zoom behavior.
-- **Minimap**: Create a responsive minimap that updates in real-time as the user navigates.
-- **Highlighting**: Use SVG paths with directional arrows to clearly indicate technology relationships.
-- **Search and Filter**: Develop intuitive search and filter components that dynamically update the visualization.
-- **Performance Optimization**: Employ lazy loading, caching, and efficient data structures to maintain performance.
+- **Zoom and Pan**: Leverage React Flow's built-in zoom and pan functionality with customizable controls.
+- **Minimap**: Utilize React Flow's MiniMap component with custom styling to match the application theme.
+- **Highlighting**: Implement custom node and edge styling to highlight selected technologies and their prerequisites.
+- **Search and Filter**: Develop intuitive search and filter components using Chakra UI that dynamically update the visualization.
+- **Performance Optimization**: Utilize React Flow's performance optimizations and Chakra UI's efficient rendering.
 
 ## Testing
 - Unit tests for individual components.
@@ -34,68 +34,66 @@ This phase focuses on creating an interactive, performant, and user-friendly vis
 - Ensure intuitive navigation and interaction.
 - Provide clear visual feedback for user actions.
 - Maintain responsiveness across various devices and screen sizes.
+- Implement dark mode support using Chakra UI's theming system.
 
-## Viewport vs SVG Implementation Guidance
+## Component Architecture
 
-To avoid common pitfalls in viewport and SVG implementation, follow these specific guidelines:
+### Core Visualization Components
+- **TechTreeCanvas**: Main React Flow container that renders the technology tree.
+- **TechNode**: Custom node component for rendering technology nodes with Chakra UI styling.
+- **TechEdge**: Custom edge component for connections between technologies.
+- **TechMinimap**: Styled React Flow MiniMap component for navigation.
+- **TechControls**: Custom zoom and pan controls using Chakra UI components.
 
-- **Viewport Management**:
-  - Clearly separate viewport logic (zooming, panning) from SVG rendering logic.
-  - Use D3.js zoom behavior to manage viewport transformations efficiently.
-  - Maintain a clear distinction between viewport coordinates and SVG coordinates.
-
-- **SVG Structure**:
-  - Structure SVG elements hierarchically, grouping related elements logically.
-  - Apply transformations at the group (`<g>`) level rather than individual elements to optimize performance.
-  - Ensure SVG elements are responsive and scale appropriately with viewport transformations.
-
-- **Performance Considerations**:
-  - Minimize DOM manipulations by batching updates and using virtual DOM techniques where possible.
-  - Implement lazy rendering and culling techniques to render only visible elements within the viewport.
-  - Use efficient data binding and update patterns provided by D3.js.
-
-- **Debugging and Maintenance**:
-  - Clearly document the viewport and SVG coordinate systems and transformations.
-  - Provide debugging tools or overlays to visualize viewport boundaries and transformations during development.
-
-Following these guidelines will help maintain a clean, performant, and maintainable implementation of viewport and SVG interactions.
+### UI Components
+- **SearchBar**: Chakra UI input with autocomplete for finding technologies.
+- **FilterPanel**: Collapsible panel with filter options using Chakra UI form components.
+- **TechDetailsPanel**: Sliding panel showing detailed information about selected technologies.
+- **LoadingOverlay**: Chakra UI spinner and overlay for loading states.
+- **ErrorDisplay**: Toast notifications for error messages.
 
 ## Step-by-Step Implementation Plan
 
-### Stage 1: Basic SVG Setup and Rendering
-- Set up React project with Vite and Tailwind CSS.
-- Integrate D3.js for SVG rendering.
-- Render basic SVG elements representing technologies.
-- **Test**: Verify basic SVG rendering and React-D3 integration.
+### Stage 1: Basic Setup and React Flow Integration
+- Set up React project with Vite and Chakra UI.
+- Integrate React Flow and create basic node/edge components.
+- Implement basic tech tree layout with mock data.
+- **Test**: Verify basic rendering and React Flow integration.
 
-### Stage 2: Zoom and Pan Functionality
-- Implement zoom and pan using D3.js zoom behavior.
-- Clearly separate viewport logic from SVG rendering logic.
-- **Test**: Ensure smooth zooming and panning interactions.
+### Stage 2: Custom Node and Edge Components
+- Create custom TechNode component with Chakra UI styling.
+- Implement custom TechEdge component for connections.
+- Add basic interactivity (selection, hover effects).
+- **Test**: Ensure components render correctly and respond to interactions.
 
 ### Stage 3: Interactive Selection and Highlighting
-- Add interactive selection of technologies.
-- Highlight selected technology and its prerequisites with directional arrows.
+- Implement node selection logic.
+- Create highlighting system for prerequisites and dependencies.
+- Add directional indicators to edges.
 - **Test**: Validate correct highlighting and interaction responsiveness.
 
-### Stage 4: Responsive Minimap
-- Develop a responsive minimap component.
-- Ensure real-time updates reflecting viewport changes.
-- **Test**: Confirm minimap accuracy and responsiveness.
+### Stage 4: UI Components and Layout
+- Develop search bar and filter panel using Chakra UI.
+- Create tech details panel with Chakra UI components.
+- Implement responsive layout with hidden trays.
+- **Test**: Verify UI components function correctly and layout is responsive.
 
-### Stage 5: Search and Filtering
-- Implement robust search functionality to center view on selected results.
-- Add filtering by area, category, and tier.
+### Stage 5: Search and Filtering Integration
+- Connect search functionality to the visualization.
+- Implement filtering logic to show/hide nodes based on criteria.
+- Add smooth transitions when focusing on search results.
 - **Test**: Verify search accuracy and dynamic filtering effectiveness.
 
 ### Stage 6: Performance Optimization
-- Apply lazy loading and culling techniques.
-- Optimize DOM manipulations and data binding.
+- Implement virtualization for large datasets.
+- Optimize React Flow rendering for large numbers of nodes.
+- Add lazy loading for tech details and images.
 - **Test**: Conduct performance tests with large datasets (2,000+ technologies).
 
 ### Stage 7: UX Enhancements
-- Add tooltips, loading indicators, and clear error messages.
-- Ensure responsive design across devices.
+- Add tooltips and loading indicators using Chakra UI.
+- Implement dark mode toggle and theming.
+- Enhance keyboard navigation and accessibility.
 - **Test**: Perform UX and accessibility testing across browsers and devices.
 
 ### Stage 8: Final Integration and Testing
@@ -233,6 +231,39 @@ export const mockTechnologies = [
 ];
 ```
 
+## Data Transformation for React Flow
+
+React Flow requires data in a specific format with nodes and edges. Here's how to transform the Stellaris tech data:
+
+```javascript
+// Transform tech data to React Flow format
+const transformTechDataToReactFlow = (technologies) => {
+  const nodes = technologies.map(tech => ({
+    id: tech.id,
+    type: 'techNode', // Custom node type
+    position: calculatePosition(tech), // Function to determine position based on tier/category
+    data: { ...tech, selected: false, highlighted: false }
+  }));
+
+  // Create edges from prerequisites
+  const edges = [];
+  technologies.forEach(tech => {
+    tech.prerequisites.forEach(prereqId => {
+      edges.push({
+        id: `${prereqId}-${tech.id}`,
+        source: prereqId,
+        target: tech.id,
+        type: 'techEdge', // Custom edge type
+        animated: false,
+        data: { highlighted: false }
+      });
+    });
+  });
+
+  return { nodes, edges };
+};
+```
+
 ### Backend Integration Points
 
 - **Stage 5**: Begin integration with the real backend API during the Search and Filtering stage.
@@ -248,63 +279,129 @@ export const mockTechnologies = [
 
 This structured approach ensures each stage is independently testable, facilitating easier debugging and maintenance.
 
-This design ensures a robust, scalable, and user-friendly interactive visualization for the Stellaris Tech Tree Viewer. 
-
-## Detailed UX Specification
+## Detailed UX Specification with Chakra UI
 
 ### Visual Design
-- **Dark Mode Aesthetic**: Employ a consistent dark mode palette (dark grays, subtle blues, and soft whites) for enhanced readability and reduced eye strain.
-- **Modern Minimalism**: Use subtle gradients, soft shadows, and rounded corners to achieve a sleek, contemporary feel.
-- **Typography**: Choose a clean, sans-serif font (e.g., Inter or Roboto) ensuring legibility across various zoom levels.
+- **Dark Mode Aesthetic**: Implement using Chakra UI's color mode system with a consistent dark palette (dark grays, subtle blues, and soft whites).
+- **Modern Minimalism**: Utilize Chakra UI's built-in components with subtle shadows and rounded corners.
+- **Typography**: Leverage Chakra UI's typography system with a clean, sans-serif font ensuring legibility across zoom levels.
 
 ### Layout
-- **Full-Window Tech Tree**: Maximize screen real estate by dedicating the entire viewport to the interactive SVG-based technology tree visualization.
-- **Hidden UI Trays**: Keep auxiliary UI elements (search, filters, details pane, debug info) in sliding trays that remain hidden until explicitly accessed by the user via unobtrusive icons at the screen edges.
-  - **Left Tray**: Search and Filter options.
-  - **Right Tray**: Technology Details pane.
-  - **Bottom Tray**: Debug and Performance metrics.
+- **Full-Window Tech Tree**: Use Chakra UI's Box component to create a full-viewport container for React Flow.
+- **Hidden UI Trays**: Implement with Chakra UI's Drawer components:
+  - **Left Drawer**: Search and Filter options.
+  - **Right Drawer**: Technology Details pane.
+  - **Bottom Drawer**: Debug and Performance metrics (collapsible).
 
 ### Interaction Elements
-- **Edge Icons**: Discrete, minimalist icons (magnifying glass for search, sliders for filters, information icon for details, bug icon for debug info) placed at the screen edges to toggle respective trays.
-- **Tray Behavior**:
-  - Smooth sliding animations (ease-in-out, ~200ms) upon opening and closing.
-  - Automatic tray collapse when clicking outside or pressing ESC.
+- **Edge Icons**: Use Chakra UI's IconButton components with appropriate aria-labels for accessibility.
+- **Drawer Behavior**:
+  - Implement with Chakra UI's useDisclosure hook for smooth open/close transitions.
+  - Configure to close when clicking outside or pressing ESC.
 
 ### User Feedback
 - **Interactive Highlights**:
-  - Technology nodes subtly glow or expand slightly on hover to indicate interactivity.
-  - Clear directional arrows animate smoothly to show technology prerequisites upon selection.
+  - Implement hover and selection states using Chakra UI's style props (_hover, _active).
+  - Use React Flow's selection and highlighting capabilities for connections.
 - **Tooltips**:
-  - Appear instantly upon node hover, presenting concise technology details (name, tier, prerequisites).
-  - Fade gently after mouse leaves.
+  - Utilize Chakra UI's Tooltip component for instant tech information on hover.
+  - Configure with appropriate delay and fade settings.
 - **Loading and Errors**:
-  - Small, unobtrusive loading spinners appear near the cursor or in the bottom tray for background operations.
-  - Error messages appear briefly in a minimalist overlay at the top-center with actionable recovery suggestions.
+  - Use Chakra UI's Spinner component for loading states.
+  - Implement error handling with Chakra UI's Alert and Toast components.
 
 ### Responsive Minimap
-- A compact, draggable minimap sits discreetly in the bottom-right corner.
-- The minimap border highlights the currently viewed area, smoothly updating during zooming and panning.
-- Clicking or dragging within the minimap rapidly repositions the viewport.
+- Integrate React Flow's MiniMap component with custom styling.
+- Position in the bottom-right corner using Chakra UI's positioning utilities.
+- Style to match the application's theme using Chakra UI's theming system.
 
-### Zoom and Pan
-- Smooth, inertia-driven zooming and panning interactions, ensuring natural and responsive navigation.
-- Clear zoom-level indicator subtly presented in the bottom-left corner.
+### Zoom and Pan Controls
+- Customize React Flow's built-in controls with Chakra UI styling.
+- Add a zoom level indicator using Chakra UI's Badge component.
+- Implement keyboard shortcuts for navigation with clear visual feedback.
 
 ### Search and Filtering UX
-- Instant search results displayed dynamically within the left tray, highlighting matched terms clearly.
-- Clicking a result immediately pans and zooms the viewport smoothly to the selected technology.
-- Filtering options provide immediate visual feedback by fading or temporarily hiding non-relevant nodes.
+- Create a search component using Chakra UI's Input and InputGroup.
+- Implement filtering with Chakra UI's Checkbox, Radio, and Select components.
+- Provide immediate visual feedback using Chakra UI's transitions and animations.
 
 ### Accessibility
-- Ensure contrast ratios meet WCAG AA standards.
-- Keyboard navigation support:
-  - Arrow keys and WASD for pan.
-  - Plus/minus or scroll wheel for zoom.
-  - Tab navigation through search/filter inputs and interactive elements.
+- Leverage Chakra UI's built-in accessibility features.
+- Ensure all interactive elements have appropriate ARIA attributes.
+- Implement keyboard navigation with clear focus indicators.
+- Test with screen readers to ensure compatibility.
 
 ### Responsive Design
-- UX gracefully adapts to different resolutions, maintaining usability on tablets and desktop screens.
-- Edge icons and trays adjust positioning responsively, maintaining easy access and interaction.
+- Utilize Chakra UI's responsive style props for adaptive layouts.
+- Implement different interaction patterns for touch devices.
+- Ensure all UI elements remain accessible at various screen sizes.
 
-This UX approach prioritizes clarity, responsiveness, and intuitive interaction, creating an engaging and efficient user experience for exploring the technology tree.
+## State Management
+
+For managing the application state, we'll use a combination of:
+
+1. **React Flow's Built-in State**: For managing the graph's nodes, edges, and viewport.
+2. **React Context**: For sharing state between components (selected node, filter criteria).
+3. **Chakra UI's Hooks**: For managing UI state (drawer open/closed, color mode).
+
+```javascript
+// Example state management structure
+const TechTreeContext = createContext();
+
+function TechTreeProvider({ children }) {
+  // Selected technology state
+  const [selectedTechId, setSelectedTechId] = useState(null);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    categories: { physics: true, society: true, engineering: true },
+    tiers: [0, 1, 2, 3, 4],
+    areas: {}
+  });
+  
+  // React Flow instance
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  
+  // Tech details drawer
+  const detailsDrawer = useDisclosure();
+  
+  // Filter drawer
+  const filterDrawer = useDisclosure();
+  
+  // Functions for interacting with the tech tree
+  const centerOnTech = useCallback((techId) => {
+    if (reactFlowInstance && techId) {
+      // Find the node
+      const node = reactFlowInstance.getNodes().find(n => n.id === techId);
+      if (node) {
+        // Center view on node with animation
+        reactFlowInstance.setCenter(node.position.x, node.position.y, { duration: 800 });
+        setSelectedTechId(techId);
+        detailsDrawer.onOpen();
+      }
+    }
+  }, [reactFlowInstance, detailsDrawer]);
+  
+  // Value to be provided by context
+  const value = {
+    selectedTechId,
+    setSelectedTechId,
+    filters,
+    setFilters,
+    reactFlowInstance,
+    setReactFlowInstance,
+    detailsDrawer,
+    filterDrawer,
+    centerOnTech
+  };
+  
+  return (
+    <TechTreeContext.Provider value={value}>
+      {children}
+    </TechTreeContext.Provider>
+  );
+}
+```
+
+This design ensures a robust, scalable, and user-friendly interactive visualization for the Stellaris Tech Tree Viewer, leveraging React Flow and Chakra UI for efficient development and excellent user experience.
 
