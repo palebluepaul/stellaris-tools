@@ -1,28 +1,49 @@
-import { memo } from 'react';
-import { Handle, Position } from 'reactflow';
+import { memo, useState } from 'react';
+import { Handle, Position, useReactFlow } from 'reactflow';
 import { 
   Box, 
   Text, 
   Badge, 
-  useColorModeValue 
+  Tooltip,
+  useColorModeValue,
+  Flex
 } from '@chakra-ui/react';
 
 // Category colors
 const categoryColors = {
-  physics: { bg: 'blue.500', text: 'white' },
-  society: { bg: 'green.500', text: 'white' },
-  engineering: { bg: 'orange.500', text: 'white' }
+  physics: { bg: 'blue.500', text: 'white', hoverBg: 'blue.600' },
+  society: { bg: 'green.500', text: 'white', hoverBg: 'green.600' },
+  engineering: { bg: 'orange.500', text: 'white', hoverBg: 'orange.600' }
 };
 
-const TechNode = ({ data, isConnectable, selected }) => {
+// Area icons (can be expanded later)
+const areaIcons = {
+  weapons: '🔫',
+  shields: '🛡️',
+  power: '⚡',
+  ships: '🚀',
+  default: '🔬'
+};
+
+const TechNode = ({ id, data, isConnectable, selected }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const { getEdges, setEdges } = useReactFlow();
+  
   // Get colors based on category
   const category = data.category || 'physics';
-  const { bg: categoryBg, text: categoryText } = categoryColors[category];
+  const { bg: categoryBg, text: categoryText, hoverBg: categoryHoverBg } = categoryColors[category];
+  
+  // Get area icon
+  const areaIcon = areaIcons[data.area] || areaIcons.default;
   
   // Dynamic styling based on state
-  const nodeBg = useColorModeValue('white', 'gray.800');
+  const nodeBg = useColorModeValue(
+    isHovered ? 'gray.50' : 'white', 
+    isHovered ? 'gray.700' : 'gray.800'
+  );
   const nodeBorder = useColorModeValue('gray.200', 'gray.600');
   const nodeTextColor = useColorModeValue('gray.800', 'gray.100');
+  const descriptionColor = useColorModeValue('gray.600', 'gray.400');
   
   // Highlight styling
   const isHighlighted = data.highlighted;
@@ -33,9 +54,25 @@ const TechNode = ({ data, isConnectable, selected }) => {
     ? selectedBorder 
     : isHighlighted 
       ? highlightBorder 
-      : nodeBorder;
+      : isHovered
+        ? useColorModeValue('gray.300', 'gray.500')
+        : nodeBorder;
   
   const borderWidth = selected || isHighlighted ? '2px' : '1px';
+  const boxShadow = isHovered 
+    ? 'lg' 
+    : selected || isHighlighted 
+      ? 'md' 
+      : 'sm';
+  
+  // Handle mouse events for hover effects
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+  
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
   
   return (
     <>
@@ -44,49 +81,87 @@ const TechNode = ({ data, isConnectable, selected }) => {
         type="target"
         position={Position.Top}
         isConnectable={isConnectable}
-        style={{ background: '#555', width: '8px', height: '8px' }}
+        style={{ 
+          background: isHovered || selected ? '#555' : '#777', 
+          width: '8px', 
+          height: '8px',
+          transition: 'all 0.2s'
+        }}
       />
       
       {/* Node content */}
-      <Box
-        p={2}
-        borderWidth={borderWidth}
-        borderRadius="md"
-        borderColor={borderColor}
-        bg={nodeBg}
-        color={nodeTextColor}
-        boxShadow="md"
-        width="160px"
-        transition="all 0.2s"
-        _hover={{ boxShadow: 'lg' }}
+      <Tooltip 
+        label={data.description} 
+        placement="top" 
+        hasArrow 
+        openDelay={300}
+        bg={useColorModeValue('gray.700', 'gray.200')}
+        color={useColorModeValue('white', 'gray.800')}
       >
-        <Badge 
-          colorScheme={category} 
-          mb={1} 
-          borderRadius="full" 
-          px={2}
-          size="sm"
-          bg={categoryBg}
-          color={categoryText}
+        <Box
+          p={2}
+          borderWidth={borderWidth}
+          borderRadius="md"
+          borderColor={borderColor}
+          bg={nodeBg}
+          color={nodeTextColor}
+          boxShadow={boxShadow}
+          width="160px"
+          height="80px"
+          transition="all 0.2s"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          cursor="pointer"
+          _hover={{ 
+            boxShadow: 'lg'
+          }}
         >
-          Tier {data.tier}
-        </Badge>
-        
-        <Text fontWeight="bold" fontSize="sm" mb={1} noOfLines={2}>
-          {data.name}
-        </Text>
-        
-        <Text fontSize="xs" color="gray.500" noOfLines={1}>
-          Cost: {data.cost}
-        </Text>
-      </Box>
+          <Flex justify="space-between" align="center" mb={1}>
+            <Badge 
+              colorScheme={category} 
+              borderRadius="full" 
+              px={2}
+              size="sm"
+              bg={isHovered ? categoryHoverBg : categoryBg}
+              color={categoryText}
+            >
+              Tier {data.tier}
+            </Badge>
+            <Text fontSize="lg" lineHeight="1">
+              {areaIcon}
+            </Text>
+          </Flex>
+          
+          <Text 
+            fontWeight="bold" 
+            fontSize="sm" 
+            mb={1} 
+            isTruncated
+            title={data.name}
+          >
+            {data.name}
+          </Text>
+          
+          <Flex justify="space-between" fontSize="xs" color="gray.500">
+            <Text>Cost: {data.cost}</Text>
+            {data.prerequisites.length > 0 && (
+              <Text>Prereq: {data.prerequisites.length}</Text>
+            )}
+          </Flex>
+        </Box>
+      </Tooltip>
       
       {/* Output handle (bottom) */}
       <Handle
         type="source"
         position={Position.Bottom}
         isConnectable={isConnectable}
-        style={{ background: '#555', width: '8px', height: '8px' }}
+        style={{ 
+          background: isHovered || selected ? '#555' : '#777', 
+          width: '8px', 
+          height: '8px',
+          transition: 'all 0.2s'
+        }}
       />
     </>
   );

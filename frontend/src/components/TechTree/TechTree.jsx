@@ -10,7 +10,7 @@ const TechTree = () => {
       </Heading>
       
       <Text mb={1} fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
-        Interactive visualization of technologies. Select a node to see its details.
+        Interactive visualization of technologies. Click on a node to see its prerequisites.
       </Text>
       
       {/* ReactFlowProvider is required to use the useReactFlow hook */}
@@ -22,6 +22,7 @@ const TechTree = () => {
       
       <Text mt={1} fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
         Tip: Use mouse wheel to zoom, drag to pan, and click to select technologies. You can also drag the viewport in the minimap.
+        Hover over nodes to see details. Click a node to highlight its prerequisites.
       </Text>
     </Box>
   );

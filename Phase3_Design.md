@@ -59,18 +59,18 @@ This phase focuses on creating an interactive, performant, and user-friendly vis
 - Simple static page to ensure Chakra UI annd basic styling is working. 
 - **Test**: Verify basic rendering.
 
-### Stage 1: React Flow Integration
+### Stage 1: React Flow Integration - COMPLETE
 - Integrate React Flow and create basic node/edge components.
 - Implement basic tech tree layout with mock data.
 - **Test**: Verify React Flow integration.
 
-### Stage 2: Custom Node and Edge Components
+### Stage 2: Custom Node and Edge Components - COMPLETE
 - Create custom TechNode component with Chakra UI styling.
 - Implement custom TechEdge component for connections.
 - Add basic interactivity (selection, hover effects).
 - **Test**: Ensure components render correctly and respond to interactions.
 
-### Stage 3: Interactive Selection and Highlighting
+### Stage 3: Interactive Selection and Highlighting - COMPLETE
 - Implement node selection logic.
 - Create highlighting system for prerequisites and dependencies.
 - Add directional indicators to edges.

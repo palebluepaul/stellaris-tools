@@ -8,7 +8,8 @@ import {
   useColorModeValue,
   IconButton,
   useColorMode,
-  Flex
+  Flex,
+  ChakraProvider
 } from '@chakra-ui/react'
 import { MoonIcon, SunIcon } from '@chakra-ui/icons'
 import DebugPanel from './components/DebugPanel'
@@ -25,12 +26,29 @@ function App() {
     version: '0.1.0',
     colorMode: colorMode,
     phase: 'Phase 1',
-    stage: 'Stage 1 - React Flow Integration',
+    stage: 'Stage 2 - Custom Node and Edge Components',
     features: {
       minimap: {
         enabled: true,
         pannable: true,
         zoomable: true
+      },
+      nodes: {
+        customStyling: true,
+        tooltips: true,
+        hoverEffects: true,
+        categoryColors: true,
+        areaIcons: true
+      },
+      edges: {
+        customStyling: true,
+        directionalArrows: true,
+        highlighting: true
+      },
+      interactivity: {
+        nodeSelection: true,
+        prerequisiteHighlighting: true,
+        tooltips: true
       },
       layout: 'auto-positioned by category and tier'
     }
