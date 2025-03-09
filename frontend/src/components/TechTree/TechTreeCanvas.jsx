@@ -8,9 +8,11 @@ import ReactFlow, {
   useReactFlow,
   MarkerType,
   addEdge,
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Box, useColorModeValue, useToast } from '@chakra-ui/react';
+import { Box, useColorModeValue, useToast, Button, Tooltip, Switch, FormControl, FormLabel, HStack, Text } from '@chakra-ui/react';
+import { RepeatIcon, ViewIcon } from '@chakra-ui/icons';
 
 // Import custom node types
 import TechNode from './TechNode';
@@ -47,6 +49,12 @@ const TechTreeCanvas = ({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdgesState, onEdgesChange] = useEdgesState([]);
   
+  // State for filtered view
+  const [enableFilteredView, setEnableFilteredView] = useState(false);
+  const [filteredNodes, setFilteredNodes] = useState([]);
+  const [filteredEdges, setFilteredEdges] = useState([]);
+  const [isFiltered, setIsFiltered] = useState(false);
+  
   // Ref to track if initial fit view has been done
   const initialFitDoneRef = useRef(false);
   
@@ -62,6 +70,85 @@ const TechTreeCanvas = ({
   useEffect(() => {
     debugDataRef.current = debugData;
   }, [debugData]);
+  
+  // Find all prerequisites recursively
+  const findAllPrerequisites = useCallback((techId, allPrereqs = new Set()) => {
+    // Get the tech node
+    const tech = technologies.find(t => t.id === techId);
+    if (!tech) return allPrereqs;
+    
+    // Add prerequisites
+    if (Array.isArray(tech.prerequisites)) {
+      tech.prerequisites.forEach(prereqId => {
+        if (!allPrereqs.has(prereqId)) {
+          allPrereqs.add(prereqId);
+          // Recursively find prerequisites of this prerequisite
+          findAllPrerequisites(prereqId, allPrereqs);
+        }
+      });
+    }
+    
+    return allPrereqs;
+  }, [technologies]);
+  
+  // Find all techs that are unlocked by this tech (recursively)
+  const findAllUnlocks = useCallback((techId, allUnlocks = new Set()) => {
+    // Find all techs that have this tech as a prerequisite
+    technologies.forEach(tech => {
+      if (Array.isArray(tech.prerequisites) && tech.prerequisites.includes(techId)) {
+        if (!allUnlocks.has(tech.id)) {
+          allUnlocks.add(tech.id);
+          // Recursively find techs unlocked by this tech
+          findAllUnlocks(tech.id, allUnlocks);
+        }
+      }
+    });
+    
+    return allUnlocks;
+  }, [technologies]);
+  
+  // Filter the tech tree based on the selected tech
+  const filterTechTree = useCallback((selectedTechId) => {
+    if (!selectedTechId || !enableFilteredView) {
+      // If no tech is selected or filtering is disabled, show all nodes
+      setFilteredNodes(nodes);
+      setFilteredEdges(edges);
+      setIsFiltered(false);
+      return;
+    }
+    
+    // Find all prerequisites and unlocks
+    const prereqIds = findAllPrerequisites(selectedTechId);
+    const unlockIds = findAllUnlocks(selectedTechId);
+    
+    // Add the selected tech itself
+    const relevantTechIds = new Set([selectedTechId, ...prereqIds, ...unlockIds]);
+    
+    // Filter nodes
+    const relevantNodes = nodes.filter(node => relevantTechIds.has(node.id));
+    
+    // Filter edges - only keep edges where both source and target are in the relevant techs
+    const relevantEdges = edges.filter(edge => 
+      relevantTechIds.has(edge.source) && relevantTechIds.has(edge.target)
+    );
+    
+    // Update filtered nodes and edges
+    setFilteredNodes(relevantNodes);
+    setFilteredEdges(relevantEdges);
+    setIsFiltered(true);
+    
+    // Log for debugging
+    console.log(`Filtered tech tree to show ${relevantNodes.length} nodes and ${relevantEdges.length} edges related to ${selectedTechId}`);
+    
+    // Fit view to the filtered nodes
+    setTimeout(() => {
+      fitView({ 
+        padding: 0.3,
+        includeHiddenNodes: false,
+        duration: 800
+      });
+    }, 100);
+  }, [nodes, edges, findAllPrerequisites, findAllUnlocks, enableFilteredView, fitView]);
   
   // Separate effect for updating global debug data to avoid infinite loops
   useEffect(() => {
@@ -105,7 +192,11 @@ const TechTreeCanvas = ({
   useEffect(() => {
     if (technologies.length === 0) return;
     
+    console.log(`Loading ${technologies.length} technologies into React Flow`);
+    
     const { nodes: initialNodes, edges: initialEdges } = transformTechDataToReactFlow(technologies);
+    
+    console.log(`Created ${initialNodes.length} nodes and ${initialEdges.length} edges`);
     
     // Convert edges to use our custom edge type
     const customEdges = initialEdges.map(edge => ({
@@ -122,6 +213,10 @@ const TechTreeCanvas = ({
     setNodes(initialNodes);
     setEdgesState(customEdges);
     
+    // Initialize filtered nodes and edges with all nodes and edges
+    setFilteredNodes(initialNodes);
+    setFilteredEdges(customEdges);
+    
     // Update debug info
     setLocalDebugInfo(prev => ({
       ...prev,
@@ -129,16 +224,52 @@ const TechTreeCanvas = ({
       edgeCount: customEdges.length,
     }));
     
+    // For large datasets, use a longer timeout to ensure all nodes are rendered
+    const timeoutDuration = technologies.length > 100 ? 3000 : 1000;
+    
     // Fit view after data is loaded with a better padding
     setTimeout(() => {
+      console.log('Fitting view to nodes');
+      
+      // For very large datasets, use a more zoomed-out view
+      const padding = technologies.length > 300 ? 1.0 : 0.8;
+      const maxZoom = technologies.length > 300 ? 0.3 : 0.5;
+      
       fitView({ 
-        padding: 0.3,
+        padding,
         includeHiddenNodes: true,
-        duration: 800
+        duration: 1500,
+        maxZoom
       });
+      
       initialFitDoneRef.current = true;
-    }, 200);
+      
+      console.log('View fitted');
+      
+      // Add a second fit view with a longer delay to ensure all nodes are properly positioned
+      setTimeout(() => {
+        console.log('Refitting view to ensure all nodes are visible');
+        fitView({ 
+          padding,
+          includeHiddenNodes: true,
+          duration: 1000,
+          maxZoom
+        });
+      }, 2000);
+    }, timeoutDuration);
   }, [technologies, setNodes, setEdgesState, fitView]);
+  
+  // Filter tech tree when selected tech changes
+  useEffect(() => {
+    if (selectedTech) {
+      filterTechTree(selectedTech.id);
+    } else {
+      // If no tech is selected, show all nodes
+      setFilteredNodes(nodes);
+      setFilteredEdges(edges);
+      setIsFiltered(false);
+    }
+  }, [selectedTech, nodes, edges, filterTechTree]);
   
   // Handle node click
   const onNodeClick = useCallback((event, node) => {
@@ -369,8 +500,8 @@ const TechTreeCanvas = ({
       borderColor={useColorModeValue('gray.200', 'gray.700')}
     >
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={isFiltered ? filteredNodes : nodes}
+        edges={isFiltered ? filteredEdges : edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
@@ -379,17 +510,48 @@ const TechTreeCanvas = ({
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.1}
-        maxZoom={2}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+        fitViewOptions={{ 
+          padding: 0.8,
+          maxZoom: 0.5
+        }}
+        minZoom={0.05}
+        maxZoom={2.0}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.2 }}
         attributionPosition="bottom-right"
         style={{ width: '100%', height: '100%' }}
         selectNodesOnDrag={false}
         nodesDraggable={false}
+        elementsSelectable={true}
+        zoomOnScroll={true}
+        panOnScroll={true}
+        panOnDrag={true}
+        zoomOnDoubleClick={true}
+        nodeExtent={[
+          [-20000, -20000],
+          [20000, 20000]
+        ]}
       >
         <Background color={useColorModeValue('#aaa', '#555')} gap={16} />
-        <Controls />
+        <Controls>
+          <Tooltip label="Reset View">
+            <Button
+              size="sm"
+              variant="ghost"
+              colorScheme="blue"
+              leftIcon={<RepeatIcon />}
+              onClick={() => {
+                fitView({ 
+                  padding: 0.8,
+                  includeHiddenNodes: true,
+                  duration: 1500,
+                  maxZoom: 0.5
+                });
+              }}
+            >
+              Reset View
+            </Button>
+          </Tooltip>
+        </Controls>
         <MiniMap 
           nodeStrokeColor={useColorModeValue('#555', '#ddd')}
           nodeColor={useColorModeValue('#fff', '#333')}
@@ -402,6 +564,60 @@ const TechTreeCanvas = ({
           width={200}
           height={150}
         />
+        
+        {/* Filter toggle panel */}
+        <Panel position="top-right" style={{ background: 'transparent', border: 'none' }}>
+          <Box 
+            bg={useColorModeValue('white', 'gray.800')} 
+            p={3} 
+            borderRadius="md" 
+            boxShadow="md"
+            borderWidth="1px"
+            borderColor={useColorModeValue('gray.200', 'gray.700')}
+          >
+            <FormControl display="flex" alignItems="center">
+              <FormLabel htmlFor="filter-toggle" mb="0" fontSize="sm">
+                <HStack spacing={2}>
+                  <ViewIcon />
+                  <Text>Focus View</Text>
+                </HStack>
+              </FormLabel>
+              <Switch 
+                id="filter-toggle" 
+                isChecked={enableFilteredView}
+                onChange={(e) => {
+                  setEnableFilteredView(e.target.checked);
+                  if (!e.target.checked) {
+                    // If disabling, show all nodes
+                    setFilteredNodes(nodes);
+                    setFilteredEdges(edges);
+                    setIsFiltered(false);
+                    
+                    // Fit view to all nodes
+                    setTimeout(() => {
+                      fitView({ 
+                        padding: 0.8,
+                        includeHiddenNodes: true,
+                        duration: 800,
+                        maxZoom: 0.5
+                      });
+                    }, 100);
+                  } else if (selectedTech) {
+                    // If enabling and a tech is selected, filter the tree
+                    filterTechTree(selectedTech.id);
+                  }
+                }}
+                colorScheme="blue"
+                size="md"
+              />
+            </FormControl>
+            {selectedTech && enableFilteredView && isFiltered && (
+              <Text fontSize="xs" color="gray.500" mt={2}>
+                Showing {filteredNodes.length} related technologies
+              </Text>
+            )}
+          </Box>
+        </Panel>
       </ReactFlow>
     </Box>
   );

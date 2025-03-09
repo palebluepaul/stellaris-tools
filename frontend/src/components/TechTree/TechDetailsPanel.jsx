@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -22,7 +22,15 @@ import {
   DrawerCloseButton,
   useDisclosure,
   HStack,
-  Tag
+  Tag,
+  Code,
+  useClipboard,
+  Tooltip,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon
 } from '@chakra-ui/react';
 import { 
   ChevronDownIcon, 
@@ -33,7 +41,9 @@ import {
   ArrowBackIcon,
   StarIcon,
   LockIcon,
-  UnlockIcon
+  UnlockIcon,
+  CopyIcon,
+  CheckIcon
 } from '@chakra-ui/icons';
 
 const TechDetailsPanel = ({ 
@@ -339,10 +349,89 @@ const TechDetailsPanel = ({
                 Next
               </Button>
             </Flex>
+            
+            {/* Debug section */}
+            <Divider mt={4} mb={2} />
+            
+            <Accordion allowToggle>
+              <AccordionItem border="none">
+                <h2>
+                  <AccordionButton 
+                    _expanded={{ bg: sectionBgColor, color: 'blue.500' }}
+                    borderRadius="md"
+                  >
+                    <Box as="span" flex='1' textAlign='left'>
+                      <Text fontWeight="bold">Debug Information</Text>
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel pb={4}>
+                  <VStack align="stretch" spacing={2}>
+                    <Text fontSize="sm" fontWeight="medium">
+                      If you found overlapping techs, please copy this information:
+                    </Text>
+                    
+                    <Box 
+                      p={3} 
+                      borderWidth="1px" 
+                      borderRadius="md" 
+                      bg={useColorModeValue('gray.50', 'gray.700')}
+                      fontSize="sm"
+                      fontFamily="monospace"
+                      position="relative"
+                    >
+                      <DebugInfoContent tech={selectedTech} />
+                    </Box>
+                  </VStack>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
           </VStack>
         </DrawerBody>
       </DrawerContent>
     </Drawer>
+  );
+};
+
+// Component to display debug information with copy button
+const DebugInfoContent = ({ tech }) => {
+  const debugInfo = {
+    id: tech.id,
+    name: tech.name || tech.displayName,
+    tier: tech.tier,
+    category: tech.category || tech.areaId,
+    area: tech.area || tech.categoryId,
+    prerequisites: tech.prerequisites,
+    position: tech._debug?.position || tech._position,
+    // Include any other relevant information
+  };
+  
+  const debugText = JSON.stringify(debugInfo, null, 2);
+  const { hasCopied, onCopy } = useClipboard(debugText);
+  
+  return (
+    <>
+      <IconButton
+        icon={hasCopied ? <CheckIcon /> : <CopyIcon />}
+        size="sm"
+        position="absolute"
+        top={2}
+        right={2}
+        onClick={onCopy}
+        aria-label="Copy debug info"
+        colorScheme={hasCopied ? "green" : "blue"}
+      />
+      <VStack align="stretch" spacing={2}>
+        <Text whiteSpace="pre-wrap" pr={10}>
+          {debugText}
+        </Text>
+        <Text fontSize="xs" color="gray.500" mt={2}>
+          If you find overlapping techs, please select both and share their debug information.
+          The position coordinates (x, y) and globalKey are especially important.
+        </Text>
+      </VStack>
+    </>
   );
 };
 

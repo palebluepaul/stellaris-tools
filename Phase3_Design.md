@@ -88,6 +88,10 @@ This phase focuses on creating an interactive, performant, and user-friendly vis
 - Add smooth transitions when focusing on search results.
 - **Test**: Verify search accuracy and dynamic filtering effectiveness.
 
+Connected to tech tree
+
+TODO: Filter view reorganises techs for cleaner display. 
+
 ### Stage 6: Performance Optimization
 - Implement virtualization for large datasets.
 - Optimize React Flow rendering for large numbers of nodes.

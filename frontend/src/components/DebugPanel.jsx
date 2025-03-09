@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Box,
   Button,
@@ -7,17 +7,44 @@ import {
   Text,
   VStack,
   Code,
-  useColorModeValue
+  useColorModeValue,
+  IconButton,
+  useToast,
+  Flex
 } from '@chakra-ui/react';
-import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon, ChevronUpIcon, CopyIcon } from '@chakra-ui/icons';
 
 const DebugPanel = ({ data = {} }) => {
   const [isOpen, setIsOpen] = useState(false);
   const bgColor = useColorModeValue('gray.100', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const codeBg = useColorModeValue('gray.50', 'gray.900');
+  const toast = useToast();
+  const codeRef = useRef(null);
 
   const togglePanel = () => setIsOpen(!isOpen);
+
+  const copyToClipboard = () => {
+    const jsonString = JSON.stringify(data, null, 2);
+    navigator.clipboard.writeText(jsonString)
+      .then(() => {
+        toast({
+          title: "Copied to clipboard",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+          title: "Failed to copy",
+          status: "error",
+          duration: 2000,
+          isClosable: true,
+        });
+      });
+  };
 
   return (
     <Box
@@ -44,9 +71,18 @@ const DebugPanel = ({ data = {} }) => {
       
       <Collapse in={isOpen} animateOpacity>
         <Box p={4} maxH="300px" overflowY="auto">
-          <VStack align="start" spacing={3}>
-            <Text fontWeight="bold">Debug Information:</Text>
-            <Code p={2} width="100%" borderRadius="md" bg={codeBg}>
+          <VStack align="start" spacing={3} width="100%">
+            <Flex width="100%" justifyContent="space-between" alignItems="center">
+              <Text fontWeight="bold">Debug Information:</Text>
+              <IconButton
+                icon={<CopyIcon />}
+                size="sm"
+                aria-label="Copy to clipboard"
+                onClick={copyToClipboard}
+                title="Copy to clipboard"
+              />
+            </Flex>
+            <Code p={2} width="100%" borderRadius="md" bg={codeBg} ref={codeRef}>
               {JSON.stringify(data, null, 2)}
             </Code>
           </VStack>

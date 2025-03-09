@@ -156,6 +156,17 @@ const TechTreeLayout = () => {
     };
   }, [fetchRealTechnologies, checkBackend]);
   
+  // Update filtered technologies when real technologies change
+  useEffect(() => {
+    if (realTechnologies.length > 0 && !usingMockData) {
+      // If we have real data and we're not using mock data, update filtered technologies
+      setFilteredTechnologies(realTechnologies);
+      
+      // Log to console for debugging
+      console.log(`Updated filtered technologies with ${realTechnologies.length} real technologies`);
+    }
+  }, [realTechnologies, usingMockData]);
+  
   // Handle technology selection
   const handleSelectTech = useCallback((tech) => {
     setSelectedTech(tech);
@@ -175,8 +186,10 @@ const TechTreeLayout = () => {
   
   // Handle filter changes
   const handleFiltersChange = useCallback((filters) => {
-    // Determine which dataset to filter
-    const dataToFilter = usingMockData ? mockTechnologies : realTechnologies.length > 0 ? realTechnologies : mockTechnologies;
+    // Determine which dataset to filter - prioritize real data when available
+    const dataToFilter = (!usingMockData && realTechnologies.length > 0) 
+      ? realTechnologies 
+      : mockTechnologies;
     
     // Apply filters to technologies
     const filtered = dataToFilter.filter(tech => {
@@ -268,8 +281,10 @@ const TechTreeLayout = () => {
     window.realTechnologies = realTechnologies;
   }, [debugData, realTechnologies]);
   
-  // Determine which technologies to display in search
-  const searchTechnologies = usingMockData ? mockTechnologies : realTechnologies.length > 0 ? realTechnologies : mockTechnologies;
+  // Determine which technologies to display in search - prioritize real data when available
+  const searchTechnologies = (!usingMockData && realTechnologies.length > 0)
+    ? realTechnologies
+    : mockTechnologies;
   
   return (
     <Box width="100%" height="100%" position="relative">
