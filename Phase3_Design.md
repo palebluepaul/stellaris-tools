@@ -54,11 +54,15 @@ This phase focuses on creating an interactive, performant, and user-friendly vis
 
 ## Step-by-Step Implementation Plan
 
-### Stage 1: Basic Setup and React Flow Integration
+### Stage 0: Basic Setup
 - Set up React project with Vite and Chakra UI.
+- Simple static page to ensure Chakra UI annd basic styling is working. 
+- **Test**: Verify basic rendering.
+
+### Stage 1: React Flow Integration
 - Integrate React Flow and create basic node/edge components.
 - Implement basic tech tree layout with mock data.
-- **Test**: Verify basic rendering and React Flow integration.
+- **Test**: Verify React Flow integration.
 
 ### Stage 2: Custom Node and Edge Components
 - Create custom TechNode component with Chakra UI styling.
