@@ -1,35 +1,31 @@
 {
   "platformInfo": {
-    "platform": "linux",
-    "isWSL": true
+    "platform": "darwin",
+    "isWSL": false
   },
   "entries": {
     "platformInfo": {
       "value": {
-        "platform": "linux",
-        "isWSL": true
+        "platform": "darwin",
+        "isWSL": false
       },
-      "expires": 1741534009777
+      "expires": 1741605785734
     },
     "userDataDir": {
-      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris",
-      "expires": 1741534009798
-    },
-    "gameInstallDir": {
-      "value": "/mnt/c/Program Files (x86)/Steam/steamapps/common/Stellaris",
-      "expires": 1741534009858
-    },
-    "workshopModsDir": {
-      "value": "/mnt/c/Program Files (x86)/Steam/steamapps/workshop/content/281990",
-      "expires": 1741534009879
+      "value": "/Users/paulscott/Documents/Paradox Interactive/Stellaris",
+      "expires": 1741605785740
     },
     "launcherDb": {
-      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
-      "expires": 1741513269592
+      "value": "/Users/paulscott/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
+      "expires": 1741522985747
     },
-    "saveGamesDir": {
-      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/save games",
-      "expires": 1741513269617
+    "gameInstallDir": {
+      "value": "/Users/paulscott/Library/Application Support/Steam/steamapps/common/Stellaris",
+      "expires": 1741605785760
+    },
+    "workshopModsDir": {
+      "value": "/Users/paulscott/Library/Application Support/Steam/steamapps/workshop/content/281990",
+      "expires": 1741605785766
     }
   }
 }
