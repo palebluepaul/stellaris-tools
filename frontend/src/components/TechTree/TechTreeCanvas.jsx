@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -15,7 +15,7 @@ import { Box, useColorModeValue, useToast } from '@chakra-ui/react';
 // Import custom node types
 import TechNode from './TechNode';
 import TechEdge from './TechEdge';
-import { mockTechnologies, transformTechDataToReactFlow } from './mockTechnologies';
+import { transformTechDataToReactFlow } from './mockTechnologies';
 
 // Define node types and edge types
 const nodeTypes = {
@@ -38,17 +38,21 @@ const defaultEdgeOptions = {
   animated: false,
 };
 
-const TechTreeCanvas = () => {
+const TechTreeCanvas = ({ 
+  technologies = [], 
+  onSelectTech,
+  selectedTech
+}) => {
   // React Flow instance
-  const { fitView, getNode, getEdges, setEdges } = useReactFlow();
+  const { fitView, getNode, getEdges, setEdges, setCenter, getNodes } = useReactFlow();
   const toast = useToast();
   
   // State for nodes and edges
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdgesState, onEdgesChange] = useEdgesState([]);
   
-  // State for selected node
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  // Ref to track if initial fit view has been done
+  const initialFitDoneRef = useRef(false);
   
   // Debug state for tracking React Flow events
   const [debugInfo, setDebugInfo] = useState({
@@ -57,9 +61,11 @@ const TechTreeCanvas = () => {
     selectedNodes: [],
   });
   
-  // Load initial data
+  // Load data when technologies change
   useEffect(() => {
-    const { nodes: initialNodes, edges: initialEdges } = transformTechDataToReactFlow(mockTechnologies);
+    if (technologies.length === 0) return;
+    
+    const { nodes: initialNodes, edges: initialEdges } = transformTechDataToReactFlow(technologies);
     
     // Convert edges to use our custom edge type
     const customEdges = initialEdges.map(edge => ({
@@ -90,94 +96,213 @@ const TechTreeCanvas = () => {
         includeHiddenNodes: true,
         duration: 800
       });
+      initialFitDoneRef.current = true;
     }, 200);
-  }, [setNodes, setEdgesState, fitView]);
+  }, [technologies, setNodes, setEdgesState, fitView]);
   
   // Handle node click
   const onNodeClick = useCallback((event, node) => {
-    // Toggle selection
-    const isAlreadySelected = selectedNodeId === node.id;
+    // Find the tech object from the node data
+    const tech = technologies.find(t => t.id === node.id);
+    if (tech) {
+      onSelectTech(tech);
+    }
     
-    // Clear previous highlighting
+    // Highlight prerequisites
+    const highlightedNodeIds = new Set();
+    const highlightedEdgeIds = new Set();
+    
+    // Function to recursively find prerequisites
+    const findPrerequisites = (techId) => {
+      const tech = getNode(techId);
+      if (!tech) return;
+      
+      // Add this node to highlighted set
+      highlightedNodeIds.add(techId);
+      
+      // Find all prerequisite edges and nodes
+      tech.data.prerequisites.forEach(prereqId => {
+        // Highlight the edge
+        const edgeId = `${prereqId}-${techId}`;
+        highlightedEdgeIds.add(edgeId);
+        
+        // Recursively highlight prerequisites
+        findPrerequisites(prereqId);
+      });
+    };
+    
+    // Start highlighting from the selected node
+    findPrerequisites(node.id);
+    
+    // Apply highlighting to nodes
     setNodes(nds => 
       nds.map(n => ({
         ...n,
-        data: { ...n.data, highlighted: false }
+        data: { 
+          ...n.data, 
+          highlighted: highlightedNodeIds.has(n.id) && n.id !== node.id,
+          selected: n.id === node.id
+        }
       }))
     );
     
+    // Apply highlighting to edges
     setEdgesState(eds => 
       eds.map(e => ({
         ...e,
-        data: { ...e.data, highlighted: false }
+        data: { 
+          ...e.data, 
+          highlighted: highlightedEdgeIds.has(e.id)
+        }
+      }))
+    );
+  }, [technologies, onSelectTech, getNode, setNodes, setEdgesState]);
+  
+  // Listen for focusOnTech events
+  useEffect(() => {
+    const handleFocusOnTech = (event) => {
+      const { techId, fromDetailsPanel } = event.detail;
+      const node = getNode(techId);
+      
+      if (node) {
+        // Center view on the node with a slightly higher zoom level for better visibility
+        setCenter(node.position.x, node.position.y, { duration: 800, zoom: 1.5 });
+        
+        // Find the tech object from the node data
+        const tech = technologies.find(t => t.id === techId);
+        if (tech && !fromDetailsPanel) {
+          // Call onSelectTech to update the selected tech in the parent component
+          // Only if not already coming from the details panel
+          onSelectTech(tech);
+        }
+        
+        // Highlight prerequisites
+        const highlightedNodeIds = new Set();
+        const highlightedEdgeIds = new Set();
+        
+        // Function to recursively find prerequisites
+        const findPrerequisites = (techId) => {
+          const tech = getNode(techId);
+          if (!tech) return;
+          
+          // Add this node to highlighted set
+          highlightedNodeIds.add(techId);
+          
+          // Find all prerequisite edges and nodes
+          tech.data.prerequisites.forEach(prereqId => {
+            // Highlight the edge
+            const edgeId = `${prereqId}-${techId}`;
+            highlightedEdgeIds.add(edgeId);
+            
+            // Recursively highlight prerequisites
+            findPrerequisites(prereqId);
+          });
+        };
+        
+        // Start highlighting from the selected node
+        findPrerequisites(techId);
+        
+        // Apply highlighting to nodes
+        setNodes(nds => 
+          nds.map(n => ({
+            ...n,
+            data: { 
+              ...n.data, 
+              highlighted: highlightedNodeIds.has(n.id) && n.id !== techId,
+              selected: n.id === techId
+            }
+          }))
+        );
+        
+        // Apply highlighting to edges
+        setEdgesState(eds => 
+          eds.map(e => ({
+            ...e,
+            data: { 
+              ...e.data, 
+              highlighted: highlightedEdgeIds.has(e.id)
+            }
+          }))
+        );
+        
+        // Show toast only if not from details panel
+        if (!fromDetailsPanel) {
+          toast({
+            title: 'Focused on Technology',
+            description: `Centered view on ${node.data.name}`,
+            status: 'info',
+            duration: 2000,
+            isClosable: true,
+            position: 'top-right',
+          });
+        }
+      }
+    };
+    
+    window.addEventListener('focusOnTech', handleFocusOnTech);
+    
+    return () => {
+      window.removeEventListener('focusOnTech', handleFocusOnTech);
+    };
+  }, [getNode, setCenter, setNodes, setEdgesState, toast, technologies, onSelectTech]);
+  
+  // Update highlighting when selectedTech changes
+  useEffect(() => {
+    if (!selectedTech || !initialFitDoneRef.current) return;
+    
+    const node = getNode(selectedTech.id);
+    if (!node) return;
+    
+    // Highlight prerequisites
+    const highlightedNodeIds = new Set();
+    const highlightedEdgeIds = new Set();
+    
+    // Function to recursively find prerequisites
+    const findPrerequisites = (techId) => {
+      const tech = getNode(techId);
+      if (!tech) return;
+      
+      // Add this node to highlighted set
+      highlightedNodeIds.add(techId);
+      
+      // Find all prerequisite edges and nodes
+      tech.data.prerequisites.forEach(prereqId => {
+        // Highlight the edge
+        const edgeId = `${prereqId}-${techId}`;
+        highlightedEdgeIds.add(edgeId);
+        
+        // Recursively highlight prerequisites
+        findPrerequisites(prereqId);
+      });
+    };
+    
+    // Start highlighting from the selected node
+    findPrerequisites(selectedTech.id);
+    
+    // Apply highlighting to nodes
+    setNodes(nds => 
+      nds.map(n => ({
+        ...n,
+        data: { 
+          ...n.data, 
+          highlighted: highlightedNodeIds.has(n.id) && n.id !== selectedTech.id,
+          selected: n.id === selectedTech.id
+        }
       }))
     );
     
-    if (!isAlreadySelected) {
-      setSelectedNodeId(node.id);
-      
-      // Show toast with tech info
-      toast({
-        title: node.data.name,
-        description: node.data.description,
-        status: 'info',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right',
-      });
-      
-      // Highlight prerequisites
-      const highlightedNodeIds = new Set();
-      const highlightedEdgeIds = new Set();
-      
-      // Function to recursively find prerequisites
-      const findPrerequisites = (techId) => {
-        const tech = getNode(techId);
-        if (!tech) return;
-        
-        // Add this node to highlighted set
-        highlightedNodeIds.add(techId);
-        
-        // Find all prerequisite edges and nodes
-        tech.data.prerequisites.forEach(prereqId => {
-          // Highlight the edge
-          const edgeId = `${prereqId}-${techId}`;
-          highlightedEdgeIds.add(edgeId);
-          
-          // Recursively highlight prerequisites
-          findPrerequisites(prereqId);
-        });
-      };
-      
-      // Start highlighting from the selected node
-      findPrerequisites(node.id);
-      
-      // Apply highlighting to nodes
-      setNodes(nds => 
-        nds.map(n => ({
-          ...n,
-          data: { 
-            ...n.data, 
-            highlighted: highlightedNodeIds.has(n.id) && n.id !== node.id
-          }
-        }))
-      );
-      
-      // Apply highlighting to edges
-      setEdgesState(eds => 
-        eds.map(e => ({
-          ...e,
-          data: { 
-            ...e.data, 
-            highlighted: highlightedEdgeIds.has(e.id)
-          }
-        }))
-      );
-    } else {
-      // Deselect if already selected
-      setSelectedNodeId(null);
-    }
-  }, [selectedNodeId, setNodes, setEdgesState, getNode, toast]);
+    // Apply highlighting to edges
+    setEdgesState(eds => 
+      eds.map(e => ({
+        ...e,
+        data: { 
+          ...e.data, 
+          highlighted: highlightedEdgeIds.has(e.id)
+        }
+      }))
+    );
+    
+  }, [selectedTech, getNode, setNodes, setEdgesState]);
   
   // Handle selection change
   const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {

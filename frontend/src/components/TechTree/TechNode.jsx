@@ -25,9 +25,12 @@ const areaIcons = {
   default: '🔬'
 };
 
-const TechNode = ({ id, data, isConnectable, selected }) => {
+const TechNode = ({ id, data, isConnectable, selected: reactFlowSelected }) => {
   const [isHovered, setIsHovered] = useState(false);
   const { getEdges, setEdges } = useReactFlow();
+  
+  // Use either React Flow's selected state or our custom selected state from data
+  const isSelected = reactFlowSelected || data.selected;
   
   // Get colors based on category
   const category = data.category || 'physics';
@@ -50,7 +53,7 @@ const TechNode = ({ id, data, isConnectable, selected }) => {
   const highlightBorder = useColorModeValue('blue.400', 'blue.300');
   const selectedBorder = useColorModeValue('purple.500', 'purple.300');
   
-  const borderColor = selected 
+  const borderColor = isSelected 
     ? selectedBorder 
     : isHighlighted 
       ? highlightBorder 
@@ -58,10 +61,10 @@ const TechNode = ({ id, data, isConnectable, selected }) => {
         ? useColorModeValue('gray.300', 'gray.500')
         : nodeBorder;
   
-  const borderWidth = selected || isHighlighted ? '2px' : '1px';
+  const borderWidth = isSelected || isHighlighted ? '2px' : '1px';
   const boxShadow = isHovered 
     ? 'lg' 
-    : selected || isHighlighted 
+    : isSelected || isHighlighted 
       ? 'md' 
       : 'sm';
   
@@ -82,7 +85,7 @@ const TechNode = ({ id, data, isConnectable, selected }) => {
         position={Position.Top}
         isConnectable={isConnectable}
         style={{ 
-          background: isHovered || selected ? '#555' : '#777', 
+          background: isHovered || isSelected ? '#555' : '#777', 
           width: '8px', 
           height: '8px',
           transition: 'all 0.2s'
@@ -157,7 +160,7 @@ const TechNode = ({ id, data, isConnectable, selected }) => {
         position={Position.Bottom}
         isConnectable={isConnectable}
         style={{ 
-          background: isHovered || selected ? '#555' : '#777', 
+          background: isHovered || isSelected ? '#555' : '#777', 
           width: '8px', 
           height: '8px',
           transition: 'all 0.2s'

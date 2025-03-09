@@ -26,7 +26,7 @@ function App() {
     version: '0.1.0',
     colorMode: colorMode,
     phase: 'Phase 1',
-    stage: 'Stage 2 - Custom Node and Edge Components',
+    stage: 'Stage 4/5 - UI Components and Search/Filter Integration',
     features: {
       minimap: {
         enabled: true,
@@ -48,9 +48,16 @@ function App() {
       interactivity: {
         nodeSelection: true,
         prerequisiteHighlighting: true,
-        tooltips: true
+        tooltips: true,
+        search: true,
+        filtering: true,
+        detailsPanel: true
       },
-      layout: 'auto-positioned by category and tier'
+      layout: {
+        autoPositioned: true,
+        responsive: true,
+        drawerPanels: true
+      }
     }
   });
 
