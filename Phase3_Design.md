@@ -249,3 +249,62 @@ export const mockTechnologies = [
 This structured approach ensures each stage is independently testable, facilitating easier debugging and maintenance.
 
 This design ensures a robust, scalable, and user-friendly interactive visualization for the Stellaris Tech Tree Viewer. 
+
+## Detailed UX Specification
+
+### Visual Design
+- **Dark Mode Aesthetic**: Employ a consistent dark mode palette (dark grays, subtle blues, and soft whites) for enhanced readability and reduced eye strain.
+- **Modern Minimalism**: Use subtle gradients, soft shadows, and rounded corners to achieve a sleek, contemporary feel.
+- **Typography**: Choose a clean, sans-serif font (e.g., Inter or Roboto) ensuring legibility across various zoom levels.
+
+### Layout
+- **Full-Window Tech Tree**: Maximize screen real estate by dedicating the entire viewport to the interactive SVG-based technology tree visualization.
+- **Hidden UI Trays**: Keep auxiliary UI elements (search, filters, details pane, debug info) in sliding trays that remain hidden until explicitly accessed by the user via unobtrusive icons at the screen edges.
+  - **Left Tray**: Search and Filter options.
+  - **Right Tray**: Technology Details pane.
+  - **Bottom Tray**: Debug and Performance metrics.
+
+### Interaction Elements
+- **Edge Icons**: Discrete, minimalist icons (magnifying glass for search, sliders for filters, information icon for details, bug icon for debug info) placed at the screen edges to toggle respective trays.
+- **Tray Behavior**:
+  - Smooth sliding animations (ease-in-out, ~200ms) upon opening and closing.
+  - Automatic tray collapse when clicking outside or pressing ESC.
+
+### User Feedback
+- **Interactive Highlights**:
+  - Technology nodes subtly glow or expand slightly on hover to indicate interactivity.
+  - Clear directional arrows animate smoothly to show technology prerequisites upon selection.
+- **Tooltips**:
+  - Appear instantly upon node hover, presenting concise technology details (name, tier, prerequisites).
+  - Fade gently after mouse leaves.
+- **Loading and Errors**:
+  - Small, unobtrusive loading spinners appear near the cursor or in the bottom tray for background operations.
+  - Error messages appear briefly in a minimalist overlay at the top-center with actionable recovery suggestions.
+
+### Responsive Minimap
+- A compact, draggable minimap sits discreetly in the bottom-right corner.
+- The minimap border highlights the currently viewed area, smoothly updating during zooming and panning.
+- Clicking or dragging within the minimap rapidly repositions the viewport.
+
+### Zoom and Pan
+- Smooth, inertia-driven zooming and panning interactions, ensuring natural and responsive navigation.
+- Clear zoom-level indicator subtly presented in the bottom-left corner.
+
+### Search and Filtering UX
+- Instant search results displayed dynamically within the left tray, highlighting matched terms clearly.
+- Clicking a result immediately pans and zooms the viewport smoothly to the selected technology.
+- Filtering options provide immediate visual feedback by fading or temporarily hiding non-relevant nodes.
+
+### Accessibility
+- Ensure contrast ratios meet WCAG AA standards.
+- Keyboard navigation support:
+  - Arrow keys and WASD for pan.
+  - Plus/minus or scroll wheel for zoom.
+  - Tab navigation through search/filter inputs and interactive elements.
+
+### Responsive Design
+- UX gracefully adapts to different resolutions, maintaining usability on tablets and desktop screens.
+- Edge icons and trays adjust positioning responsively, maintaining easy access and interaction.
+
+This UX approach prioritizes clarity, responsiveness, and intuitive interaction, creating an engaging and efficient user experience for exploring the technology tree.
+
