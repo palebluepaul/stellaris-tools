@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -17,35 +17,31 @@ import TechNode from './TechNode';
 import TechEdge from './TechEdge';
 import { transformTechDataToReactFlow } from './mockTechnologies';
 
-// Define node types and edge types
-const nodeTypes = {
-  techNode: TechNode,
-};
-
-const edgeTypes = {
-  techEdge: TechEdge,
-};
-
-// Default edge options
-const defaultEdgeOptions = {
-  type: 'techEdge',
-  markerEnd: {
-    type: MarkerType.ArrowClosed,
-    width: 20,
-    height: 20,
-    color: '#888',
-  },
-  animated: false,
-};
-
 const TechTreeCanvas = ({ 
   technologies = [], 
   onSelectTech,
-  selectedTech
+  selectedTech,
+  debugData = {}
 }) => {
   // React Flow instance
   const { fitView, getNode, getEdges, setEdges, setCenter, getNodes } = useReactFlow();
   const toast = useToast();
+  
+  // Memoize node types and edge types to prevent unnecessary re-renders
+  const nodeTypes = useMemo(() => ({ techNode: TechNode }), []);
+  const edgeTypes = useMemo(() => ({ techEdge: TechEdge }), []);
+  
+  // Default edge options
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'techEdge',
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#888',
+    },
+    animated: false,
+  }), []);
   
   // State for nodes and edges
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -55,11 +51,55 @@ const TechTreeCanvas = ({
   const initialFitDoneRef = useRef(false);
   
   // Debug state for tracking React Flow events
-  const [debugInfo, setDebugInfo] = useState({
+  const [localDebugInfo, setLocalDebugInfo] = useState({
     nodeCount: 0,
     edgeCount: 0,
     selectedNodes: [],
   });
+  
+  // Update App's debug panel with our debug data - use a ref to prevent infinite updates
+  const debugDataRef = useRef(debugData);
+  useEffect(() => {
+    debugDataRef.current = debugData;
+  }, [debugData]);
+  
+  // Separate effect for updating global debug data to avoid infinite loops
+  useEffect(() => {
+    const updateGlobalDebugData = () => {
+      // Only update if we have nodes loaded
+      if (!getNodes) return;
+      
+      // Combine local debug info with the debug data from props
+      const combinedDebugData = {
+        ...debugDataRef.current,
+        reactFlow: {
+          ...localDebugInfo,
+          viewport: {
+            zoom: getNodes()?.length ? 'Loaded' : 'Not Loaded',
+          }
+        }
+      };
+      
+      // Update the global debug data
+      if (window.updateDebugData) {
+        window.updateDebugData(combinedDebugData);
+      } else {
+        // Create the function if it doesn't exist
+        window.updateDebugData = (data) => {
+          const event = new CustomEvent('updateDebugData', { detail: data });
+          window.dispatchEvent(event);
+        };
+        window.updateDebugData(combinedDebugData);
+      }
+    };
+    
+    // Set up an interval to update debug data periodically instead of on every change
+    const intervalId = setInterval(updateGlobalDebugData, 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [localDebugInfo, getNodes]);
   
   // Load data when technologies change
   useEffect(() => {
@@ -83,7 +123,7 @@ const TechTreeCanvas = ({
     setEdgesState(customEdges);
     
     // Update debug info
-    setDebugInfo(prev => ({
+    setLocalDebugInfo(prev => ({
       ...prev,
       nodeCount: initialNodes.length,
       edgeCount: customEdges.length,
@@ -307,7 +347,7 @@ const TechTreeCanvas = ({
   // Handle selection change
   const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {
     // Update debug info with selected nodes
-    setDebugInfo(prev => ({
+    setLocalDebugInfo(prev => ({
       ...prev,
       selectedNodes: selectedNodes.map(node => node.id),
     }));

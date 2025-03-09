@@ -26,7 +26,7 @@ function App() {
     version: '0.1.0',
     colorMode: colorMode,
     phase: 'Phase 1',
-    stage: 'Stage 4/5 - UI Components and Search/Filter Integration',
+    stage: 'Backend Integration - Fetching Real Data',
     features: {
       minimap: {
         enabled: true,
@@ -57,9 +57,46 @@ function App() {
         autoPositioned: true,
         responsive: true,
         drawerPanels: true
+      },
+      backend: {
+        connected: false,
+        techCount: 0,
+        loading: false,
+        error: null
       }
     }
   });
+
+  // Listen for debug data updates from components
+  useEffect(() => {
+    const handleDebugDataUpdate = (event) => {
+      const newData = event.detail;
+      
+      setDebugData(prev => ({
+        ...prev,
+        timestamp: new Date().toISOString(),
+        colorMode: colorMode,
+        backend: {
+          connected: newData.backendStatus === 'Connected',
+          techCount: newData.realTechCount || 0,
+          loading: newData.isLoading || false,
+          error: newData.error !== 'None' ? newData.error : null
+        },
+        reactFlow: newData.reactFlow || {},
+        techCounts: {
+          mock: newData.mockTechCount || 0,
+          real: newData.realTechCount || 0,
+          filtered: newData.filteredTechCount || 0
+        }
+      }));
+    };
+    
+    window.addEventListener('updateDebugData', handleDebugDataUpdate);
+    
+    return () => {
+      window.removeEventListener('updateDebugData', handleDebugDataUpdate);
+    };
+  }, [colorMode]);
 
   // Update debug data every 5 seconds to demonstrate reactivity
   useEffect(() => {
