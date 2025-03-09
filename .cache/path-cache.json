@@ -15,14 +15,6 @@
       "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris",
       "expires": 1741534009798
     },
-    "launcherDb": {
-      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
-      "expires": 1741451209818
-    },
-    "saveGamesDir": {
-      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/save games",
-      "expires": 1741451209841
-    },
     "gameInstallDir": {
       "value": "/mnt/c/Program Files (x86)/Steam/steamapps/common/Stellaris",
       "expires": 1741534009858
@@ -30,6 +22,14 @@
     "workshopModsDir": {
       "value": "/mnt/c/Program Files (x86)/Steam/steamapps/workshop/content/281990",
       "expires": 1741534009879
+    },
+    "launcherDb": {
+      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite",
+      "expires": 1741513269592
+    },
+    "saveGamesDir": {
+      "value": "/mnt/c/Users/blue_/Documents/Paradox Interactive/Stellaris/save games",
+      "expires": 1741513269617
     }
   }
 }

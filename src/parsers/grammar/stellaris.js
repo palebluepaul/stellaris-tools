@@ -71,5 +71,4 @@ if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
 })();
 
 
-// Export the grammar
-module.exports = { grammar: grammar };
+
