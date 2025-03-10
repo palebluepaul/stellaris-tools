@@ -12,6 +12,7 @@ import {
   Button,
   Collapse,
   useColorModeValue,
+  useColorMode,
   Flex,
   IconButton,
   Drawer,
@@ -46,6 +47,53 @@ import {
   CheckIcon
 } from '@chakra-ui/icons';
 
+// Component to display debug information with copy button
+const DebugInfoContent = ({ tech }) => {
+  // Call all hooks at the top level
+  const { hasCopied, onCopy } = useClipboard(JSON.stringify({
+    id: tech.id,
+    name: tech.name || tech.displayName,
+    tier: tech.tier,
+    category: tech.category || tech.areaId,
+    area: tech.area || tech.categoryId,
+    prerequisites: tech.prerequisites,
+    position: tech._debug?.position || tech._position,
+    // Include any other relevant information
+  }, null, 2));
+  
+  return (
+    <>
+      <IconButton
+        icon={hasCopied ? <CheckIcon /> : <CopyIcon />}
+        size="sm"
+        position="absolute"
+        top={2}
+        right={2}
+        onClick={onCopy}
+        aria-label="Copy debug info"
+        colorScheme={hasCopied ? "green" : "blue"}
+      />
+      <VStack align="stretch" spacing={2}>
+        <Text whiteSpace="pre-wrap" pr={10}>
+          {JSON.stringify({
+            id: tech.id,
+            name: tech.name || tech.displayName,
+            tier: tech.tier,
+            category: tech.category || tech.areaId,
+            area: tech.area || tech.categoryId,
+            prerequisites: tech.prerequisites,
+            position: tech._debug?.position || tech._position,
+          }, null, 2)}
+        </Text>
+        <Text fontSize="xs" color="gray.500" mt={2}>
+          If you find overlapping techs, please select both and share their debug information.
+          The position coordinates (x, y) and globalKey are especially important.
+        </Text>
+      </VStack>
+    </>
+  );
+};
+
 const TechDetailsPanel = ({ 
   selectedTech, 
   technologies = [], 
@@ -53,16 +101,40 @@ const TechDetailsPanel = ({
   isOpen,
   onClose
 }) => {
+  // State hooks
   const [prerequisites, setPrerequisites] = useState([]);
   const [unlocks, setUnlocks] = useState([]);
   const [showPrereqs, setShowPrereqs] = useState(true);
   const [showUnlocks, setShowUnlocks] = useState(true);
   
-  // Colors
+  // Call all context hooks unconditionally at the top level
+  // This ensures consistent hook order across renders
+  const { colorMode } = useColorMode();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const headingColor = useColorModeValue('gray.700', 'gray.200');
   const sectionBgColor = useColorModeValue('gray.50', 'gray.700');
+  
+  // Find prerequisites and unlocks when selected tech changes
+  useEffect(() => {
+    if (!selectedTech) {
+      setPrerequisites([]);
+      setUnlocks([]);
+      return;
+    }
+    
+    // Find prerequisites
+    const prereqs = technologies.filter(tech => 
+      selectedTech.prerequisites && selectedTech.prerequisites.includes(tech.id)
+    );
+    setPrerequisites(prereqs);
+    
+    // Find unlocks (techs that have this tech as a prerequisite)
+    const unlockedTechs = technologies.filter(tech => 
+      tech.prerequisites && tech.prerequisites.includes(selectedTech.id)
+    );
+    setUnlocks(unlockedTechs);
+  }, [selectedTech, technologies]);
   
   // Category color mapping
   const categoryColors = {
@@ -79,28 +151,6 @@ const TechDetailsPanel = ({
     ships: '🚀',
     default: '🔬'
   };
-  
-  // Find prerequisites and unlocks when selected tech changes
-  useEffect(() => {
-    if (!selectedTech) {
-      setPrerequisites([]);
-      setUnlocks([]);
-      return;
-    }
-    
-    // Find prerequisites
-    const prereqs = technologies.filter(tech => 
-      selectedTech.prerequisites.includes(tech.id)
-    );
-    setPrerequisites(prereqs);
-    
-    // Find technologies that this unlocks (techs that have this as a prerequisite)
-    const unlockedTechs = technologies.filter(tech => 
-      tech.prerequisites.includes(selectedTech.id)
-    );
-    setUnlocks(unlockedTechs);
-    
-  }, [selectedTech, technologies]);
   
   // If no tech is selected, show empty state
   if (!selectedTech) {
@@ -391,47 +441,6 @@ const TechDetailsPanel = ({
         </DrawerBody>
       </DrawerContent>
     </Drawer>
-  );
-};
-
-// Component to display debug information with copy button
-const DebugInfoContent = ({ tech }) => {
-  const debugInfo = {
-    id: tech.id,
-    name: tech.name || tech.displayName,
-    tier: tech.tier,
-    category: tech.category || tech.areaId,
-    area: tech.area || tech.categoryId,
-    prerequisites: tech.prerequisites,
-    position: tech._debug?.position || tech._position,
-    // Include any other relevant information
-  };
-  
-  const debugText = JSON.stringify(debugInfo, null, 2);
-  const { hasCopied, onCopy } = useClipboard(debugText);
-  
-  return (
-    <>
-      <IconButton
-        icon={hasCopied ? <CheckIcon /> : <CopyIcon />}
-        size="sm"
-        position="absolute"
-        top={2}
-        right={2}
-        onClick={onCopy}
-        aria-label="Copy debug info"
-        colorScheme={hasCopied ? "green" : "blue"}
-      />
-      <VStack align="stretch" spacing={2}>
-        <Text whiteSpace="pre-wrap" pr={10}>
-          {debugText}
-        </Text>
-        <Text fontSize="xs" color="gray.500" mt={2}>
-          If you find overlapping techs, please select both and share their debug information.
-          The position coordinates (x, y) and globalKey are especially important.
-        </Text>
-      </VStack>
-    </>
   );
 };
 

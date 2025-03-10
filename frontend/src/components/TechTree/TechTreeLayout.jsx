@@ -5,6 +5,7 @@ import {
   GridItem,
   useDisclosure,
   useColorModeValue,
+  useColorMode,
   IconButton,
   Drawer,
   DrawerBody,
@@ -33,6 +34,7 @@ import { mockTechnologies } from './mockTechnologies';
 import { fetchTechnologies, checkBackendAvailability } from '../../services/api';
 
 const TechTreeLayout = () => {
+  // Always call all hooks at the top level, in the same order
   // State for selected technology
   const [selectedTech, setSelectedTech] = useState(null);
   
@@ -42,30 +44,44 @@ const TechTreeLayout = () => {
   // State for real technologies from backend
   const [realTechnologies, setRealTechnologies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [usingMockData, setUsingMockData] = useState(true);
   
-  // State for filter drawer
+  // Call all disclosure hooks unconditionally
   const { 
-    isOpen: isFilterDrawerOpen, 
-    onOpen: onFilterDrawerOpen, 
-    onClose: onFilterDrawerClose 
+    isOpen: isFilterOpen, 
+    onOpen: onFilterOpen, 
+    onClose: onFilterClose 
   } = useDisclosure();
   
-  // State for details drawer
   const { 
-    isOpen: isDetailsDrawerOpen, 
-    onOpen: onDetailsDrawerOpen, 
-    onClose: onDetailsDrawerClose 
+    isOpen: isDetailsOpen, 
+    onOpen: onDetailsOpen, 
+    onClose: onDetailsClose 
   } = useDisclosure();
   
-  // State for error alert
+  // State for error alert - add this back
   const { 
     isOpen: isErrorAlertOpen, 
     onOpen: onErrorAlertOpen, 
     onClose: onErrorAlertClose 
   } = useDisclosure();
+  
+  // Call all color mode hooks unconditionally
+  const { colorMode } = useColorMode();
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const panelBgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  
+  // Additional color mode values for elements that were using inline useColorModeValue
+  const alertBgColor = useColorModeValue('white', 'gray.800');
+  const yellowBgColor = useColorModeValue('yellow.100', 'yellow.900');
+  const yellowBorderColor = useColorModeValue('yellow.200', 'yellow.700');
+  const yellowIconColor = useColorModeValue('yellow.500', 'yellow.300');
+  const whiteBgColor = useColorModeValue('white', 'gray.800');
+  const grayBorderColor = useColorModeValue('gray.200', 'gray.700');
   
   // Toast for notifications
   const toast = useToast();
@@ -82,53 +98,45 @@ const TechTreeLayout = () => {
     }
   }, []);
   
-  // Fetch real technologies from backend
+  // Function to fetch real technologies from backend
   const fetchRealTechnologies = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // First check if backend is available
+      // Check if backend is available
       const isAvailable = await checkBackend();
+      setBackendAvailable(isAvailable);
+      
       if (!isAvailable) {
-        throw new Error('Backend service is not available. Using mock data instead.');
+        setUsingMockData(true);
+        toast({
+          title: 'Using mock data',
+          description: 'Backend service is not available. Using mock data instead.',
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+        return mockTechnologies;
       }
       
+      // Fetch technologies from backend
       const data = await fetchTechnologies();
-      setRealTechnologies(data);
-      setUsingMockData(false);
-      
-      // Show success toast
-      toast({
-        title: 'Technologies Loaded',
-        description: `Successfully loaded ${data.length} technologies from backend`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-        position: 'top-right',
-      });
-      
-      // Log to console for debugging
       console.log(`Loaded ${data.length} technologies from backend`);
       
-      return data;
+      if (data && data.length > 0) {
+        setRealTechnologies(data);
+        setFilteredTechnologies(data);
+        setUsingMockData(false);
+        return data;
+      } else {
+        setUsingMockData(true);
+        return mockTechnologies;
+      }
     } catch (err) {
       setError(err.message);
       setUsingMockData(true);
       
-      // Show error toast but only if it's not a connection error
-      if (!err.message.includes('Connection error') && !err.message.includes('Backend service is not available')) {
-        toast({
-          title: 'Error Loading Technologies',
-          description: err.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-          position: 'top-right',
-        });
-      }
-      
-      // Open error alert for connection errors
       if (err.message.includes('Connection error') || err.message.includes('Backend service is not available')) {
         onErrorAlertOpen();
       }
@@ -170,7 +178,7 @@ const TechTreeLayout = () => {
   // Handle technology selection
   const handleSelectTech = useCallback((tech) => {
     setSelectedTech(tech);
-    onDetailsDrawerOpen();
+    onDetailsOpen();
     
     // Always focus on the selected tech, regardless of how it was selected
     // This ensures the view centers on the tech even when selected from the details panel
@@ -182,7 +190,7 @@ const TechTreeLayout = () => {
       } 
     });
     window.dispatchEvent(event);
-  }, [onDetailsDrawerOpen]);
+  }, [onDetailsOpen]);
   
   // Handle filter changes
   const handleFiltersChange = useCallback((filters) => {
@@ -294,6 +302,11 @@ const TechTreeLayout = () => {
           status="warning" 
           variant="solid" 
           borderRadius="md"
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          zIndex="toast"
           mb={4}
         >
           <AlertIcon />
@@ -332,7 +345,7 @@ const TechTreeLayout = () => {
           top="50%" 
           left="50%" 
           transform="translate(-50%, -50%)"
-          bg={useColorModeValue('white', 'gray.800')}
+          bg={alertBgColor}
           p={4}
           borderRadius="md"
           boxShadow="lg"
@@ -348,9 +361,9 @@ const TechTreeLayout = () => {
       {/* Top bar with search */}
       <Flex 
         p={2} 
-        bg={useColorModeValue('white', 'gray.800')} 
+        bg={whiteBgColor} 
         borderBottomWidth="1px" 
-        borderColor={useColorModeValue('gray.200', 'gray.700')}
+        borderColor={grayBorderColor}
         align="center"
         gap={2}
         height="60px"
@@ -358,7 +371,7 @@ const TechTreeLayout = () => {
         <IconButton
           icon={<HamburgerIcon />}
           aria-label="Open filters"
-          onClick={onFilterDrawerOpen}
+          onClick={onFilterOpen}
           variant="outline"
           height="40px"
         />
@@ -373,7 +386,7 @@ const TechTreeLayout = () => {
         <IconButton
           icon={<InfoIcon />}
           aria-label="Tech details"
-          onClick={onDetailsDrawerOpen}
+          onClick={onDetailsOpen}
           variant="outline"
           isDisabled={!selectedTech}
           height="40px"
@@ -383,15 +396,15 @@ const TechTreeLayout = () => {
       {/* Data source indicator */}
       {usingMockData && (
         <Flex 
-          bg={useColorModeValue('yellow.100', 'yellow.900')} 
+          bg={yellowBgColor} 
           px={2} 
           py={1} 
           alignItems="center"
           justifyContent="center"
           borderBottomWidth="1px"
-          borderColor={useColorModeValue('yellow.200', 'yellow.700')}
+          borderColor={yellowBorderColor}
         >
-          <WarningIcon color={useColorModeValue('yellow.500', 'yellow.300')} mr={2} />
+          <WarningIcon color={yellowIconColor} mr={2} />
           <Text fontSize="sm" fontWeight="medium">
             Using mock data. Backend connection unavailable.
           </Text>
@@ -423,9 +436,9 @@ const TechTreeLayout = () => {
       
       {/* Filter drawer */}
       <Drawer
-        isOpen={isFilterDrawerOpen}
+        isOpen={isFilterOpen}
         placement="left"
-        onClose={onFilterDrawerClose}
+        onClose={onFilterClose}
         size="md"
       >
         <DrawerOverlay />
@@ -448,8 +461,8 @@ const TechTreeLayout = () => {
         selectedTech={selectedTech}
         technologies={searchTechnologies}
         onSelectTech={handleSelectTech}
-        isOpen={isDetailsDrawerOpen}
-        onClose={onDetailsDrawerClose}
+        isOpen={isDetailsOpen}
+        onClose={onDetailsClose}
       />
     </Box>
   );
