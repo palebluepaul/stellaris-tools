@@ -264,12 +264,64 @@ app.post('/api/playsets/:id/activate', async (req, res) => {
         totalCount: loadResult.totalCount,
         baseGameCount: loadResult.baseGameCount,
         modCount: loadResult.modCount,
+        newModCount: loadResult.newModCount,
+        localizedCount: loadResult.localizedCount,
         duration: (endTime - startTime) / 1000,
         rootTechnologies: techTreeService.getRootTechnologies().length
       }
     });
   } catch (error) {
     logger.error(`Error activating playset: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get technology statistics
+app.get('/api/tech-stats', (req, res) => {
+  try {
+    if (!techService) {
+      return res.status(503).json({ error: 'Tech service not initialized' });
+    }
+    
+    // Get all technologies
+    const technologies = techService.getAllTechnologies();
+    
+    // Count technologies by category
+    const categoryCounts = {};
+    const categories = techService.getAllCategories();
+    categories.forEach(category => {
+      categoryCounts[category.id] = techService.getTechnologiesByCategory(category.id).length;
+    });
+    
+    // Count technologies by area
+    const areaCounts = {};
+    const areas = techService.getAllAreas();
+    areas.forEach(area => {
+      areaCounts[area.id] = techService.getTechnologiesByArea(area.id).length;
+    });
+    
+    // Count technologies by tier
+    const tierCounts = {};
+    for (let i = 0; i <= 5; i++) {
+      tierCounts[i] = techService.getTechnologiesByTier(i).length;
+    }
+    
+    // Get the last load result if available
+    const lastLoadResult = techService.getLastLoadResult() || {};
+    
+    res.json({
+      totalCount: technologies.length,
+      baseGameCount: lastLoadResult.baseGameCount || 0,
+      modCount: lastLoadResult.modCount || 0,
+      newModCount: lastLoadResult.newModCount || 0,
+      localizedCount: lastLoadResult.localizedCount || 0,
+      categoryCounts,
+      areaCounts,
+      tierCounts,
+      rootTechnologies: techTreeService ? techTreeService.getRootTechnologies().length : 0
+    });
+  } catch (error) {
+    logger.error(`Error getting technology statistics: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });

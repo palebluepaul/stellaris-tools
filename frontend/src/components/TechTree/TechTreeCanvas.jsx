@@ -286,6 +286,15 @@ const TechTreeCanvas = ({
           viewport: {
             zoom: getNodes()?.length ? 'Loaded' : 'Not Loaded',
           }
+        },
+        techCounts: {
+          ...debugDataRef.current.techCounts,
+          // Add more detailed counts if available
+          baseGame: debugData.baseGameCount || 0,
+          mods: debugData.modCount || 0,
+          newFromMods: debugData.newModCount || 0,
+          localized: debugData.localizedCount || 0,
+          total: technologies.length
         }
       };
       

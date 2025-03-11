@@ -111,10 +111,15 @@ const PlaysetSelector = ({ onTechReload }) => {
         setActivePlayset(updatedActivePlayset);
       }
       
-      // Show success toast
+      // Show success toast with detailed counts
+      const stats = result.stats;
+      const modTechDescription = stats.newModCount !== undefined && stats.newModCount !== stats.modCount
+        ? `${stats.modCount} loaded from mods (${stats.newModCount} new)`
+        : `${stats.modCount} from mods`;
+      
       toast({
         title: 'Playset activated',
-        description: `Successfully loaded ${result.stats.totalCount} technologies (${result.stats.baseGameCount} base game, ${result.stats.modCount} from mods)`,
+        description: `Successfully loaded ${stats.totalCount} technologies (${stats.baseGameCount} base game, ${modTechDescription})`,
         status: 'success',
         duration: 5000,
         isClosable: true,

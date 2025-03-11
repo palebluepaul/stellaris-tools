@@ -47,6 +47,12 @@ const TechTreeLayout = () => {
   const [error, setError] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [usingMockData, setUsingMockData] = useState(true);
+  const [techMetadata, setTechMetadata] = useState({
+    baseGameCount: 0,
+    modCount: 0,
+    newModCount: 0,
+    localizedCount: 0
+  });
   
   // Call all disclosure hooks unconditionally
   const { 
@@ -123,6 +129,15 @@ const TechTreeLayout = () => {
       // Fetch technologies from backend
       const data = await fetchTechnologies();
       console.log(`Loaded ${data.length} technologies from backend`);
+      
+      // Store additional metadata if available in the response
+      const techMetadata = {
+        baseGameCount: data.baseGameCount,
+        modCount: data.modCount,
+        newModCount: data.newModCount,
+        localizedCount: data.localizedCount
+      };
+      setTechMetadata(techMetadata);
       
       if (data && data.length > 0) {
         setRealTechnologies(data);
@@ -444,7 +459,16 @@ const TechTreeLayout = () => {
           technologies={filteredTechnologies}
           onSelectTech={handleSelectTech}
           selectedTech={selectedTech}
-          debugData={debugData}
+          debugData={{
+            backendStatus: backendAvailable ? 'Connected' : 'Disconnected',
+            mockTechCount: mockTechnologies.length,
+            realTechCount: realTechnologies.length,
+            filteredTechCount: filteredTechnologies.length,
+            isLoading,
+            error: error ? error.toString() : 'None',
+            usingMockData,
+            ...techMetadata
+          }}
         />
       </Box>
       

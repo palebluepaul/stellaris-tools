@@ -52,7 +52,7 @@ export const checkBackendAvailability = async () => {
 
 /**
  * Fetch all technologies from the backend
- * @returns {Promise<Array>} Array of technology objects
+ * @returns {Promise<Array>} Array of technology objects with metadata
  */
 export const fetchTechnologies = async () => {
   try {
@@ -72,6 +72,28 @@ export const fetchTechnologies = async () => {
     }
     
     const data = await response.json();
+    
+    // Also fetch technology stats if available
+    try {
+      const statsResponse = await fetchWithTimeout(`${API_BASE_URL}/tech-stats`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+      
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        // Add stats as properties to the data array
+        Object.assign(data, {
+          baseGameCount: stats.baseGameCount || 0,
+          modCount: stats.modCount || 0,
+          newModCount: stats.newModCount || 0,
+          localizedCount: stats.localizedCount || 0
+        });
+      }
+    } catch (statsError) {
+      console.warn('Could not fetch technology stats:', statsError.message);
+    }
+    
     return data;
   } catch (error) {
     // Handle different types of errors

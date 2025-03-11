@@ -148,6 +148,7 @@ The backend provides the following API endpoints:
 - `GET /api/categories`: Get all technology categories
 - `GET /api/areas`: Get all technology areas
 - `GET /api/tech-tree`: Get the root technologies of the tech tree
+- `GET /api/tech-stats`: Get detailed statistics about loaded technologies
 - `GET /api/playsets`: Get all available playsets
 - `GET /api/playsets/active`: Get the currently active playset
 - `POST /api/playsets/:id/activate`: Activate a playset and reload technologies

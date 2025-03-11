@@ -1,0 +1,7 @@
+---
+description: To understand how to restart or not restart services. 
+globs: 
+alwaysApply: false
+---
+
+Once you've finished doing your developments, do not attempt to restart either the front end or the back end. Just tell me to do so

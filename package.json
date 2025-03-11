@@ -6,6 +6,7 @@
     "start": "node src/index.js",
     "api": "node src/api/server.js",
     "dev": "nodemon src/api/server.js",
+    "dev:all": "node dev.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.js tests/**/*.js",

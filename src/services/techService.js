@@ -97,6 +97,7 @@ class TechService {
     this.modRepository = modRepository;
     this._initialized = false;
     this.activeMods = null; // Store active mods for manual override
+    this.lastLoadResult = null; // Store the last load result
   }
 
   /**
@@ -323,6 +324,14 @@ class TechService {
   }
 
   /**
+   * Get the last load result
+   * @returns {Object|null} The last load result or null if not available
+   */
+  getLastLoadResult() {
+    return this.lastLoadResult;
+  }
+
+  /**
    * Load all technologies from the base game and mods
    * @param {string} gamePath Path to the game installation
    * @returns {Promise<Object>} Result of the loading operation
@@ -344,10 +353,20 @@ class TechService {
       const baseGameCount = await this.loadBaseGameTechnologies(gamePath);
       logger.info(`Loaded ${baseGameCount} technologies from base game`);
       
+      // Get the count before adding mod technologies
+      const beforeModCount = this.database.getAllTechnologies().length;
+      
       // Load mod technologies
       logger.info('Loading mod technologies...');
-      const { count: modCount, mods } = await this.loadModTechnologies(gamePath);
-      logger.info(`Loaded ${modCount} technologies from mods`);
+      const { count: modLoadedCount, mods } = await this.loadModTechnologies(gamePath);
+      logger.info(`Loaded ${modLoadedCount} technologies from mods`);
+      
+      // Get the count after adding mod technologies
+      const afterModCount = this.database.getAllTechnologies().length;
+      
+      // Calculate the actual number of new technologies added by mods
+      // This accounts for mods overriding base game technologies
+      const modCount = afterModCount - beforeModCount;
       
       // Load localizations
       logger.info('Loading localizations...');
@@ -363,16 +382,29 @@ class TechService {
       this.database.buildTechTree();
       logger.info('Technology tree built successfully');
       
-      // Return statistics
-      const totalCount = baseGameCount + modCount;
-      return {
+      // Get the final count of technologies
+      const totalCount = this.database.getAllTechnologies().length;
+      
+      // Log detailed counts
+      logger.info('Technology count details:');
+      logger.info(`- Base game technologies: ${baseGameCount}`);
+      logger.info(`- Mod technologies loaded: ${modLoadedCount}`);
+      logger.info(`- New technologies from mods: ${modCount}`);
+      logger.info(`- Total unique technologies: ${totalCount}`);
+      
+      // Store the load result
+      this.lastLoadResult = {
         totalCount,
         baseGameCount,
-        modCount,
+        modCount: modLoadedCount,
+        newModCount: modCount,
         localizedCount,
         cacheStats,
         mods
       };
+      
+      // Return statistics
+      return this.lastLoadResult;
     } catch (error) {
       logger.error(`Error loading all technologies: ${error.message}`);
       throw error;
