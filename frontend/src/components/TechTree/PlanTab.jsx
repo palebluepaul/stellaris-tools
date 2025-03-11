@@ -451,6 +451,34 @@ const PlanTab = ({
     return grouped;
   }, [researchedTechs]);
   
+  // Group planned technologies by category
+  const plannedTechsByCategory = useMemo(() => {
+    const grouped = {
+      physics: [],
+      society: [],
+      engineering: []
+    };
+    
+    plannedTechs.forEach(tech => {
+      const category = tech.areaId || 'physics';
+      if (grouped[category]) {
+        grouped[category].push(tech);
+      }
+    });
+    
+    // Sort each category by tier and then by name
+    Object.keys(grouped).forEach(category => {
+      grouped[category].sort((a, b) => {
+        if (a.tier !== b.tier) {
+          return a.tier - b.tier;
+        }
+        return (a.displayName || a.name || a.id).localeCompare(b.displayName || b.name || b.id);
+      });
+    });
+    
+    return grouped;
+  }, [plannedTechs]);
+  
   // If no techs are planned, show empty state
   if (plannedTechs.length === 0) {
     return (
@@ -555,6 +583,57 @@ const PlanTab = ({
                                         </Text>
                                       )}
                                     </Box>
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </Box>
+                          )
+                        ))}
+                      </VStack>
+                    )}
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
+            </Box>
+            
+            {/* Planned Technologies Section */}
+            <Box mt={4}>
+              <Accordion allowMultiple defaultIndex={[0]}>
+                <AccordionItem>
+                  <h2>
+                    <AccordionButton>
+                      <Box flex="1" textAlign="left" fontWeight="bold">
+                        Planned Technologies ({plannedTechs.length})
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                  </h2>
+                  <AccordionPanel pb={4}>
+                    {plannedTechs.length === 0 ? (
+                      <Text color="gray.500" fontStyle="italic">No technologies are currently planned.</Text>
+                    ) : (
+                      <VStack spacing={3} align="stretch">
+                        {Object.entries(plannedTechsByCategory).map(([category, techs]) => (
+                          techs.length > 0 && (
+                            <Box key={category}>
+                              <Heading size="xs" mb={2} color={`${categoryColors[category]}.500`}>
+                                {category.charAt(0).toUpperCase() + category.slice(1)} ({techs.length})
+                              </Heading>
+                              <List spacing={2}>
+                                {techs.map(tech => (
+                                  <ListItem key={tech.id} display="flex" alignItems="center">
+                                    <Button 
+                                      size="xs" 
+                                      colorScheme="red" 
+                                      variant="outline" 
+                                      onClick={() => onTogglePlanTech(tech)}
+                                      mr={2}
+                                    >
+                                      Remove
+                                    </Button>
+                                    <Text>
+                                      {tech.displayName || tech.name || tech.id} (Tier {tech.tier})
+                                    </Text>
                                   </ListItem>
                                 ))}
                               </List>
