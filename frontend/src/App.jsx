@@ -14,10 +14,14 @@ import {
 import { MoonIcon, SunIcon } from '@chakra-ui/icons'
 import DebugPanel from './components/DebugPanel'
 import TechTree from './components/TechTree/TechTree'
+import PlaysetSelector from './components/PlaysetSelector'
 
 function App() {
   // Color mode toggle
   const { colorMode, toggleColorMode } = useColorMode();
+  
+  // State for tech reload
+  const [techReloadTrigger, setTechReloadTrigger] = useState(0);
 
   // Sample debug data
   const [debugData, setDebugData] = useState({
@@ -110,6 +114,23 @@ function App() {
 
     return () => clearInterval(interval);
   }, [colorMode]);
+  
+  // Handle tech reload
+  const handleTechReload = () => {
+    // Increment the trigger to force TechTree to reload
+    setTechReloadTrigger(prev => prev + 1);
+    
+    // Dispatch a custom event to notify TechTreeLayout
+    window.dispatchEvent(new CustomEvent('reloadTechnologies'));
+    
+    // Update debug data
+    setDebugData(prev => ({
+      ...prev,
+      timestamp: new Date().toISOString(),
+      appState: 'reloading',
+      stage: 'Reloading Technologies'
+    }));
+  };
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const textColor = useColorModeValue('gray.800', 'gray.100');
@@ -136,6 +157,9 @@ function App() {
             An interactive visualization of the Stellaris technology tree
           </Text>
           
+          {/* Playset Selector */}
+          <PlaysetSelector onTechReload={handleTechReload} />
+          
           {/* Main content - Tech Tree */}
           <Box 
             p={2} 
@@ -147,7 +171,7 @@ function App() {
             display="flex"
             flexDirection="column"
           >
-            <TechTree />
+            <TechTree key={`tech-tree-${techReloadTrigger}`} />
           </Box>
         </VStack>
       </Container>

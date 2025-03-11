@@ -186,4 +186,129 @@ export const fetchTechnologiesWithFilters = async (filters) => {
       throw error;
     }
   }
+};
+
+/**
+ * Fetch all playsets
+ * @returns {Promise<Array>} Array of playset objects
+ */
+export const fetchPlaysets = async () => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/playsets`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error('Request timeout: The server took too long to respond');
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error('Error fetching playsets:', error.message);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Fetch the active playset
+ * @returns {Promise<Object>} Active playset object
+ */
+export const fetchActivePlayset = async () => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/playsets/active`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // No active playset found
+      }
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error('Request timeout: The server took too long to respond');
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error('Error fetching active playset:', error.message);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Activate a playset and reload technologies
+ * @param {string} playsetId Playset ID to activate
+ * @returns {Promise<Object>} Result of the activation
+ */
+export const activatePlayset = async (playsetId) => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/playsets/${playsetId}/activate`, {
+      method: 'POST',
+      headers: { 
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Log the response for debugging
+    console.log('Playset activation response:', data);
+    
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error('Request timeout: The server took too long to respond');
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error('Error activating playset:', error.message);
+      throw error;
+    }
+  }
 }; 

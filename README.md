@@ -148,6 +148,9 @@ The backend provides the following API endpoints:
 - `GET /api/categories`: Get all technology categories
 - `GET /api/areas`: Get all technology areas
 - `GET /api/tech-tree`: Get the root technologies of the tech tree
+- `GET /api/playsets`: Get all available playsets
+- `GET /api/playsets/active`: Get the currently active playset
+- `POST /api/playsets/:id/activate`: Activate a playset and reload technologies
 
 ## Development Tools
 
@@ -179,6 +182,12 @@ The application includes several command-line tools for testing and debugging:
 - **Search**: Find technologies by name or description
 - **Filtering**: Filter technologies by category, area, and tier
 - **Dark Mode**: Toggle between light and dark themes
+
+### Mod Management
+
+- **Playset Selection**: View and select different mod playsets from the Stellaris launcher
+- **Technology Reloading**: Reload technologies when switching between playsets
+- **Mod Information**: View information about the active playset and its enabled mods
 
 ### Technology Data
 
@@ -212,6 +221,14 @@ If technologies are not displaying:
 1. Verify Stellaris installation path is correctly detected
 2. Check that mods are properly installed through the Stellaris launcher
 3. Run `npm run tech-database` to verify technology parsing
+
+### Playset Selection Issues
+
+If playsets are not loading or cannot be selected:
+
+1. Make sure you have created at least one playset in the Stellaris launcher
+2. Check that the launcher database is accessible (run `npm run mod-info` to verify)
+3. Restart the backend server if you've recently changed playsets in the launcher
 
 ## License
 

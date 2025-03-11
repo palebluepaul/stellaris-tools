@@ -19,7 +19,17 @@ const modRepository = {
         ORDER BY name
       `);
       
-      return playsets.map(playset => new Playset(playset));
+      // For each playset, get its mods
+      const result = [];
+      for (const playset of playsets) {
+        const mods = await this.getModsForPlayset(playset.id);
+        result.push(new Playset({
+          ...playset,
+          mods
+        }));
+      }
+      
+      return result;
     } catch (error) {
       logger.error(`Failed to get all playsets: ${error.message}`);
       return [];

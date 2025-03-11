@@ -105,21 +105,17 @@ async function init() {
       
       logger.info('Application initialized successfully');
       
-      // Return the services for use by other components
+      // Return the initialized services
       return {
         techService,
         techTreeService,
+        modRepository,
         activePlayset,
-        paths: {
-          userDataDir,
-          launcherDbPath,
-          saveGamesDir,
-          gameDir,
-          workshopModsDir
-        }
+        gameDir
       };
     } else {
       logger.warn('No active playset found');
+      return null;
     }
     
     logger.info('Initialization complete');

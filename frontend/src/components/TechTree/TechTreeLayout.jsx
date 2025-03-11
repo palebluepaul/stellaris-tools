@@ -164,6 +164,20 @@ const TechTreeLayout = () => {
     };
   }, [fetchRealTechnologies, checkBackend]);
   
+  // Listen for tech reload events from parent components
+  useEffect(() => {
+    const handleTechReload = () => {
+      console.log('Reloading technologies from TechTreeLayout');
+      fetchRealTechnologies();
+    };
+    
+    window.addEventListener('reloadTechnologies', handleTechReload);
+    
+    return () => {
+      window.removeEventListener('reloadTechnologies', handleTechReload);
+    };
+  }, [fetchRealTechnologies]);
+  
   // Update filtered technologies when real technologies change
   useEffect(() => {
     if (realTechnologies.length > 0 && !usingMockData) {

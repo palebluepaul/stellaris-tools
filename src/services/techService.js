@@ -88,33 +88,32 @@ class TechFileCache {
  */
 class TechService {
   /**
-   * Creates a new TechService instance
+   * Create a new TechService instance
    */
   constructor() {
-    this.parser = new TechParser();
     this.database = new TechDatabase();
-    this.modRepository = modRepository;
+    this.parser = new TechParser();
     this.fileCache = new TechFileCache();
+    this.modRepository = modRepository;
     this._initialized = false;
+    this.activeMods = null; // Store active mods for manual override
   }
 
   /**
-   * Initializes the tech service
-   * @returns {Promise<void>}
+   * Initialize the service
    */
   async initialize() {
     if (this._initialized) {
       return;
     }
-
-    logger.info('Initializing tech service');
     
-    await this.parser.initialize();
-    await this.database.initialize();
-    // modRepository doesn't need initialization
+    logger.info('Initializing TechService');
+    
+    // Initialize localization service
+    await localizationService.initialize();
     
     this._initialized = true;
-    logger.info('Tech service initialized successfully');
+    logger.info('TechService initialized');
   }
 
   /**
@@ -262,13 +261,29 @@ class TechService {
 
       logger.info('Loading technologies from active mods');
       
-      // Get active mods - use the correct method from modRepository
-      const activeMods = await this.modRepository.getEnabledModsForActivePlayset();
+      // Get enabled mods from the active playset
+      let mods;
+      
+      // If activeMods is set, use it instead of querying the database
+      if (this.activeMods) {
+        logger.info(`Using ${this.activeMods.length} manually set active mods`);
+        mods = this.activeMods;
+      } else {
+        logger.info('Fetching enabled mods from active playset...');
+        mods = await this.modRepository.getEnabledModsForActivePlayset();
+      }
+      
+      if (!mods || mods.length === 0) {
+        logger.warn('No enabled mods found');
+        return { count: 0, mods: [] };
+      }
+      
+      logger.info(`Found ${mods.length} enabled mods`);
       
       let totalLoaded = 0;
       
       // Process each mod
-      for (const mod of activeMods) {
+      for (const mod of mods) {
         logger.info(`Processing mod: ${mod.name}`);
         
         // Skip mods without a directory path
@@ -300,61 +315,68 @@ class TechService {
       // Rebuild the technology tree
       this.database.buildTechTree();
       
-      return totalLoaded;
+      return { count: totalLoaded, mods };
     } catch (error) {
       logger.error(`Error loading mod technologies: ${error.message}`);
-      return 0;
+      return { count: 0, mods: [] };
     }
   }
 
   /**
-   * Loads all technologies from the base game and mods
+   * Load all technologies from the base game and mods
    * @param {string} gamePath Path to the game installation
-   * @returns {Promise<number>} Total number of technologies loaded
+   * @returns {Promise<Object>} Result of the loading operation
    */
   async loadAllTechnologies(gamePath) {
-    if (!this._initialized) {
-      await this.initialize();
+    try {
+      // Make sure we're initialized
+      if (!this._initialized) {
+        await this.initialize();
+      }
+      
+      logger.info('Loading all technologies...');
+      
+      // Clear the database
+      this.database.clear();
+      
+      // Load base game technologies
+      logger.info('Loading base game technologies...');
+      const baseGameCount = await this.loadBaseGameTechnologies(gamePath);
+      logger.info(`Loaded ${baseGameCount} technologies from base game`);
+      
+      // Load mod technologies
+      logger.info('Loading mod technologies...');
+      const { count: modCount, mods } = await this.loadModTechnologies(gamePath);
+      logger.info(`Loaded ${modCount} technologies from mods`);
+      
+      // Load localizations
+      logger.info('Loading localizations...');
+      const localizedCount = await localizationService.localizeAllTechnologies(this.database);
+      logger.info(`Localized ${localizedCount} technologies`);
+      
+      // Get cache statistics
+      const cacheStats = this.fileCache.getStats();
+      logger.info(`Cache performance: ${cacheStats.hitRate} hit rate (${cacheStats.hits} hits, ${cacheStats.misses} misses)`);
+      
+      // Build the tech tree
+      logger.info('Building technology tree...');
+      this.database.buildTechTree();
+      logger.info('Technology tree built successfully');
+      
+      // Return statistics
+      const totalCount = baseGameCount + modCount;
+      return {
+        totalCount,
+        baseGameCount,
+        modCount,
+        localizedCount,
+        cacheStats,
+        mods
+      };
+    } catch (error) {
+      logger.error(`Error loading all technologies: ${error.message}`);
+      throw error;
     }
-
-    // Clear the database before loading
-    this.database.clear();
-    
-    // Load base game technologies
-    logger.info('Loading base game technologies...');
-    const baseGameCount = await this.loadBaseGameTechnologies(gamePath);
-    logger.info(`Loaded ${baseGameCount} technologies from base game`);
-    
-    // Load mod technologies
-    logger.info('Loading mod technologies...');
-    const modCount = await this.loadModTechnologies(gamePath);
-    logger.info(`Loaded ${modCount} technologies from mods`);
-    
-    // Build the technology tree
-    logger.info('Building technology tree...');
-    this.database.buildTechTree();
-    
-    // Load and apply localizations
-    logger.info('Loading and applying localizations...');
-    await localizationService.initialize();
-    const localizationCount = await localizationService.loadLocalizations(gamePath);
-    logger.info(`Loaded ${localizationCount} localization entries`);
-    
-    // Apply localizations to technologies
-    const localizedCount = localizationService.localizeAllTechnologies(this.database);
-    logger.info(`Applied localization to ${localizedCount} technologies`);
-    
-    // Log cache statistics
-    const cacheStats = this.fileCache.getStats();
-    logger.info(`Cache statistics: ${cacheStats.size} files cached, ${cacheStats.hits} hits, ${cacheStats.misses} misses, ${cacheStats.hitRate} hit rate`);
-    
-    return {
-      totalCount: baseGameCount + modCount,
-      baseGameCount,
-      modCount,
-      localizedCount,
-      cacheStats
-    };
   }
 
   /**
@@ -452,6 +474,20 @@ class TechService {
    */
   getTechDatabase() {
     return this.database;
+  }
+
+  /**
+   * Set active mods manually (for read-only database scenarios)
+   * @param {Array} mods Array of Mod objects to use as active mods
+   */
+  setActiveMods(mods) {
+    if (!mods || !Array.isArray(mods)) {
+      logger.warn('Invalid mods array provided to setActiveMods');
+      return;
+    }
+    
+    logger.info(`Manually setting ${mods.length} active mods`);
+    this.activeMods = mods;
   }
 }
 
