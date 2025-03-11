@@ -493,8 +493,87 @@ class TechService {
   }
 
   /**
+   * Gets all recursive prerequisites for a technology (prerequisites of prerequisites)
+   * @param {string} techId Technology ID
+   * @param {boolean} [includeOriginal=false] Whether to include the original technology in the result
+   * @returns {Object} Object containing direct prerequisites, all prerequisites, and a dependency tree
+   */
+  getAllPrerequisites(techId, includeOriginal = false) {
+    const tech = this.getTechnology(techId);
+    if (!tech) {
+      return {
+        directPrerequisites: [],
+        allPrerequisites: [],
+        tree: {}
+      };
+    }
+
+    // Get direct prerequisites
+    const directPrerequisites = this.getPrerequisites(techId);
+    
+    // Build a set of all prerequisites (to avoid duplicates)
+    const allPrerequisitesSet = new Set();
+    
+    // Build a dependency tree
+    const tree = {};
+    
+    // Helper function to recursively get prerequisites
+    const getPrereqsRecursive = (currentTechId, currentTree) => {
+      const currentTech = this.getTechnology(currentTechId);
+      if (!currentTech) return;
+      
+      // Add this tech to the tree
+      currentTree[currentTechId] = {};
+      
+      // Get prerequisites for this tech
+      const prereqs = this.getPrerequisites(currentTechId);
+      
+      // Process each prerequisite
+      for (const prereq of prereqs) {
+        // Add to the set of all prerequisites
+        allPrerequisitesSet.add(prereq.id);
+        
+        // Recursively process this prerequisite
+        getPrereqsRecursive(prereq.id, currentTree[currentTechId]);
+      }
+    };
+    
+    // Start the recursive process
+    getPrereqsRecursive(techId, tree);
+    
+    // Convert the set to an array of Tech objects
+    const allPrerequisites = Array.from(allPrerequisitesSet)
+      .map(id => this.getTechnology(id))
+      .filter(Boolean);
+    
+    // Sort prerequisites by tier and then by name
+    const sortedPrerequisites = allPrerequisites.sort((a, b) => {
+      if (a.tier !== b.tier) {
+        return a.tier - b.tier;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    
+    // Include the original technology if requested
+    if (includeOriginal) {
+      return {
+        technology: tech,
+        directPrerequisites,
+        allPrerequisites: sortedPrerequisites,
+        tree
+      };
+    }
+    
+    return {
+      directPrerequisites,
+      allPrerequisites: sortedPrerequisites,
+      tree
+    };
+  }
+
+  /**
    * Checks if a file is a technology file based on its name
-   * @param {string} fileName Name of the file
+   * @param {string} fileName File name
    * @returns {boolean} True if the file is a technology file
    * @private
    */

@@ -33,7 +33,7 @@ import TechDetailsPanel from './TechDetailsPanel';
 import { mockTechnologies } from './mockTechnologies';
 import { fetchTechnologies, checkBackendAvailability } from '../../services/api';
 
-const TechTreeLayout = () => {
+const TechTreeLayout = ({ plannedTechs = [], onTogglePlanTech }) => {
   // Always call all hooks at the top level, in the same order
   // State for selected technology
   const [selectedTech, setSelectedTech] = useState(null);
@@ -501,6 +501,8 @@ const TechTreeLayout = () => {
         onSelectTech={handleSelectTech}
         isOpen={isDetailsOpen}
         onClose={onDetailsClose}
+        plannedTechs={plannedTechs}
+        onTogglePlanTech={onTogglePlanTech}
       />
     </Box>
   );

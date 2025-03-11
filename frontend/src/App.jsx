@@ -9,12 +9,18 @@ import {
   IconButton,
   useColorMode,
   Flex,
-  ChakraProvider
+  ChakraProvider,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel
 } from '@chakra-ui/react'
 import { MoonIcon, SunIcon } from '@chakra-ui/icons'
 import DebugPanel from './components/DebugPanel'
 import TechTree from './components/TechTree/TechTree'
 import PlaysetSelector from './components/PlaysetSelector'
+import PlanTab from './components/TechTree/PlanTab'
 
 function App() {
   // Color mode toggle
@@ -22,6 +28,10 @@ function App() {
   
   // State for tech reload
   const [techReloadTrigger, setTechReloadTrigger] = useState(0);
+  
+  // State for planned technologies
+  const [plannedTechs, setPlannedTechs] = useState([]);
+  const [researchedTechs, setResearchedTechs] = useState([]);
 
   // Sample debug data
   const [debugData, setDebugData] = useState({
@@ -132,6 +142,30 @@ function App() {
     }));
   };
 
+  // Handle adding/removing tech to/from plan
+  const handleTogglePlanTech = (tech) => {
+    setPlannedTechs(prev => {
+      const exists = prev.some(t => t.id === tech.id);
+      if (exists) {
+        return prev.filter(t => t.id !== tech.id);
+      } else {
+        return [...prev, tech];
+      }
+    });
+  };
+
+  // Handle marking a tech as researched/unresearched
+  const handleToggleResearchedTech = (tech) => {
+    setResearchedTechs(prev => {
+      const exists = prev.some(t => t.id === tech.id);
+      if (exists) {
+        return prev.filter(t => t.id !== tech.id);
+      } else {
+        return [...prev, tech];
+      }
+    });
+  };
+
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const textColor = useColorModeValue('gray.800', 'gray.100');
 
@@ -160,7 +194,7 @@ function App() {
           {/* Playset Selector */}
           <PlaysetSelector onTechReload={handleTechReload} />
           
-          {/* Main content - Tech Tree */}
+          {/* Main content - Tech Tree and Plan Tabs */}
           <Box 
             p={2} 
             borderWidth="1px" 
@@ -171,7 +205,30 @@ function App() {
             display="flex"
             flexDirection="column"
           >
-            <TechTree key={`tech-tree-${techReloadTrigger}`} />
+            <Tabs isFitted variant="enclosed" flex="1" display="flex" flexDirection="column">
+              <TabList>
+                <Tab>Tech Tree</Tab>
+                <Tab>Plan</Tab>
+              </TabList>
+              
+              <TabPanels flex="1" display="flex" flexDirection="column">
+                <TabPanel p={0} flex="1" display="flex" flexDirection="column">
+                  <TechTree 
+                    key={`tech-tree-${techReloadTrigger}`} 
+                    plannedTechs={plannedTechs}
+                    onTogglePlanTech={handleTogglePlanTech}
+                  />
+                </TabPanel>
+                <TabPanel p={0} flex="1" display="flex" flexDirection="column">
+                  <PlanTab 
+                    plannedTechs={plannedTechs}
+                    researchedTechs={researchedTechs}
+                    onTogglePlanTech={handleTogglePlanTech}
+                    onToggleResearchedTech={handleToggleResearchedTech}
+                  />
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </Box>
         </VStack>
       </Container>

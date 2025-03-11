@@ -333,4 +333,188 @@ export const activatePlayset = async (playsetId) => {
       throw error;
     }
   }
+};
+
+/**
+ * Fetch all prerequisites for a technology (recursively)
+ * @param {string} techId Technology ID
+ * @returns {Promise<Array>} Array of prerequisite technology objects
+ */
+export const fetchTechnologyPrerequisites = async (techId) => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/technologies/${techId}/prerequisites?recursive=true`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error(`Request timeout: The server took too long to respond when fetching prerequisites for ${techId}`);
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error(`Error fetching prerequisites for technology ${techId}:`, error.message);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Fetch all prerequisites for multiple technologies (recursively)
+ * @param {Array<string>} techIds Array of technology IDs
+ * @returns {Promise<Array>} Array of prerequisite technology objects
+ */
+export const fetchMultipleTechnologyPrerequisites = async (techIds) => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    // Convert tech IDs array to query string
+    const queryParams = new URLSearchParams();
+    techIds.forEach(id => queryParams.append('ids', id));
+    queryParams.append('recursive', 'true');
+    
+    const response = await fetchWithTimeout(`${API_BASE_URL}/technologies/prerequisites?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error(`Request timeout: The server took too long to respond when fetching prerequisites for multiple technologies`);
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error(`Error fetching prerequisites for multiple technologies:`, error.message);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Fetch all recursive prerequisites for a technology using the new API endpoint
+ * @param {string} techId Technology ID
+ * @param {boolean} includeOriginal Whether to include the original technology in the result
+ * @returns {Promise<Object>} Object containing direct prerequisites, all prerequisites, and a dependency tree
+ */
+export const fetchAllPrerequisites = async (techId, includeOriginal = false) => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/technologies/${techId}/prerequisites/all?includeOriginal=${includeOriginal}`, 
+      {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error(`Request timeout: The server took too long to respond when fetching all prerequisites for ${techId}`);
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error(`Error fetching all prerequisites for technology ${techId}:`, error.message);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Fetch all recursive prerequisites for multiple technologies
+ * @param {Array<string>} techIds Array of technology IDs
+ * @param {boolean} includeOriginal Whether to include the original technologies in the result
+ * @returns {Promise<Object>} Object containing all prerequisites and dependency trees for each technology
+ */
+export const fetchAllPrerequisitesForMultipleTechnologies = async (techIds, includeOriginal = false) => {
+  try {
+    // First check if the backend is available
+    const isAvailable = await checkBackendAvailability();
+    if (!isAvailable) {
+      throw new Error('Backend service is not available. Please ensure the server is running.');
+    }
+    
+    // Ensure techIds is an array
+    const ids = Array.isArray(techIds) ? techIds : [techIds];
+    
+    if (ids.length === 0) {
+      return { technologies: {} };
+    }
+    
+    // Build the URL with query parameters
+    const url = new URL(`${API_BASE_URL}/technologies/prerequisites/all`);
+    
+    // Add each ID as a separate query parameter
+    ids.forEach(id => {
+      url.searchParams.append('ids', id);
+    });
+    
+    // Add other parameters
+    url.searchParams.append('includeOriginal', includeOriginal.toString());
+    
+    const response = await fetchWithTimeout(url.toString(), {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      console.error(`Request timeout: The server took too long to respond when fetching all prerequisites for multiple technologies`);
+      throw new Error('Request timeout: The server took too long to respond');
+    } else if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.error('Connection error: Unable to connect to the backend server');
+      throw new Error('Connection error: Unable to connect to the backend server');
+    } else {
+      console.error(`Error fetching all prerequisites for multiple technologies:`, error.message);
+      throw error;
+    }
+  }
 }; 

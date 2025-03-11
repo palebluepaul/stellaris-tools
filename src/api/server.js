@@ -93,6 +93,114 @@ app.get('/api/technologies/:id', (req, res) => {
   }
 });
 
+// Get all prerequisites for a technology by ID
+app.get('/api/technologies/:id/prerequisites', (req, res) => {
+  try {
+    if (!techService) {
+      return res.status(503).json({ error: 'Tech service not initialized' });
+    }
+    
+    const { id } = req.params;
+    const technology = techService.getTechnology(id);
+    
+    if (!technology) {
+      return res.status(404).json({ error: `Technology with ID ${id} not found` });
+    }
+    
+    const prerequisites = techService.getPrerequisites(id);
+    
+    res.json({
+      technology: {
+        id: technology.id,
+        name: technology.name,
+        displayName: technology.displayName
+      },
+      prerequisites: prerequisites
+    });
+  } catch (error) {
+    logger.error(`Error getting prerequisites: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all recursive prerequisites for a technology by ID
+app.get('/api/technologies/:id/prerequisites/all', (req, res) => {
+  try {
+    if (!techService) {
+      return res.status(503).json({ error: 'Tech service not initialized' });
+    }
+    
+    const { id } = req.params;
+    const includeOriginal = req.query.includeOriginal === 'true';
+    
+    const technology = techService.getTechnology(id);
+    
+    if (!technology) {
+      return res.status(404).json({ error: `Technology with ID ${id} not found` });
+    }
+    
+    const allPrerequisites = techService.getAllPrerequisites(id, includeOriginal);
+    
+    res.json({
+      technology: {
+        id: technology.id,
+        name: technology.name,
+        displayName: technology.displayName
+      },
+      ...allPrerequisites
+    });
+  } catch (error) {
+    logger.error(`Error getting all prerequisites: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all recursive prerequisites for multiple technologies
+app.get('/api/technologies/prerequisites/all', (req, res) => {
+  try {
+    if (!techService) {
+      return res.status(503).json({ error: 'Tech service not initialized' });
+    }
+    
+    const { ids } = req.query;
+    const includeOriginal = req.query.includeOriginal === 'true';
+    
+    // Handle both single ID and array of IDs
+    const techIds = Array.isArray(ids) ? ids : [ids];
+    
+    if (!techIds || techIds.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid technology IDs' });
+    }
+    
+    // Process each technology
+    const result = {
+      technologies: {}
+    };
+    
+    techIds.forEach(id => {
+      const technology = techService.getTechnology(id);
+      
+      if (technology) {
+        const allPrerequisites = techService.getAllPrerequisites(id, includeOriginal);
+        
+        result.technologies[id] = {
+          technology: {
+            id: technology.id,
+            name: technology.name,
+            displayName: technology.displayName
+          },
+          ...allPrerequisites
+        };
+      }
+    });
+    
+    res.json(result);
+  } catch (error) {
+    logger.error(`Error getting all prerequisites for multiple technologies: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all categories
 app.get('/api/categories', (req, res) => {
   try {

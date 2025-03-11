@@ -44,7 +44,9 @@ import {
   LockIcon,
   UnlockIcon,
   CopyIcon,
-  CheckIcon
+  CheckIcon,
+  AddIcon,
+  MinusIcon
 } from '@chakra-ui/icons';
 
 // Component to display debug information with copy button
@@ -94,12 +96,33 @@ const DebugInfoContent = ({ tech }) => {
   );
 };
 
+// Separate component for the debug info container to avoid hooks in JSX
+const DebugInfoContainer = ({ children }) => {
+  const bgColor = useColorModeValue('gray.50', 'gray.700');
+  
+  return (
+    <Box 
+      p={3} 
+      borderWidth="1px" 
+      borderRadius="md" 
+      bg={bgColor}
+      fontSize="sm"
+      fontFamily="monospace"
+      position="relative"
+    >
+      {children}
+    </Box>
+  );
+};
+
 const TechDetailsPanel = ({ 
   selectedTech, 
   technologies = [], 
   onSelectTech,
   isOpen,
-  onClose
+  onClose,
+  plannedTechs = [],
+  onTogglePlanTech
 }) => {
   // State hooks
   const [prerequisites, setPrerequisites] = useState([]);
@@ -135,6 +158,16 @@ const TechDetailsPanel = ({
     );
     setUnlocks(unlockedTechs);
   }, [selectedTech, technologies]);
+  
+  // Check if the selected tech is in the plan
+  const isInPlan = selectedTech && plannedTechs.some(tech => tech.id === selectedTech.id);
+  
+  // Handle toggle plan
+  const handleTogglePlan = () => {
+    if (selectedTech && onTogglePlanTech) {
+      onTogglePlanTech(selectedTech);
+    }
+  };
   
   // Category color mapping
   const categoryColors = {
@@ -243,7 +276,7 @@ const TechDetailsPanel = ({
                 {selectedTech.description}
               </Text>
               
-              <HStack spacing={4}>
+              <HStack spacing={4} mb={3}>
                 <Tag size="md" variant="outline" colorScheme="blue">
                   Cost: {selectedTech.cost}
                 </Tag>
@@ -254,6 +287,19 @@ const TechDetailsPanel = ({
                   Unlocks: {unlocks.length}
                 </Tag>
               </HStack>
+              
+              {/* Add to Plan Button */}
+              <Button
+                leftIcon={isInPlan ? <MinusIcon /> : <AddIcon />}
+                colorScheme={isInPlan ? "red" : "teal"}
+                variant="solid"
+                size="md"
+                onClick={handleTogglePlan}
+                mb={3}
+                width="100%"
+              >
+                {isInPlan ? "Remove from Plan" : "Add to Plan"}
+              </Button>
             </Box>
             
             <Divider />
@@ -422,17 +468,9 @@ const TechDetailsPanel = ({
                       If you found overlapping techs, please copy this information:
                     </Text>
                     
-                    <Box 
-                      p={3} 
-                      borderWidth="1px" 
-                      borderRadius="md" 
-                      bg={useColorModeValue('gray.50', 'gray.700')}
-                      fontSize="sm"
-                      fontFamily="monospace"
-                      position="relative"
-                    >
+                    <DebugInfoContainer>
                       <DebugInfoContent tech={selectedTech} />
-                    </Box>
+                    </DebugInfoContainer>
                   </VStack>
                 </AccordionPanel>
               </AccordionItem>
