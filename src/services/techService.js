@@ -370,6 +370,9 @@ class TechService {
       
       // Load localizations
       logger.info('Loading localizations...');
+      // First load all localizations from game and mods
+      await localizationService.loadLocalizations(gamePath);
+      // Then apply them to technologies
       const localizedCount = await localizationService.localizeAllTechnologies(this.database);
       logger.info(`Localized ${localizedCount} technologies`);
       

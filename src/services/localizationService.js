@@ -118,8 +118,9 @@ class LocalizationService {
         const entryPath = path.join(dirPath, entry.name);
         
         if (entry.isDirectory()) {
-          // Skip subdirectories for now
-          continue;
+          // Recursively search subdirectories
+          const subDirFiles = await this.findLocalizationFiles(entryPath);
+          files.push(...subDirFiles);
         } else if (entry.isFile() && this.isLocalizationFile(entry.name)) {
           files.push(entryPath);
         }
@@ -138,7 +139,10 @@ class LocalizationService {
    * @returns {boolean} True if the file is a localization file
    */
   isLocalizationFile(fileName) {
-    return fileName.endsWith('.yml');
+    // Check for common localization file extensions
+    return fileName.endsWith('.yml') || 
+           fileName.endsWith('_l_english.yml') || 
+           fileName.endsWith('_l_english.yaml');
   }
 
   /**
@@ -186,10 +190,15 @@ class LocalizationService {
     // Split by lines
     const lines = cleanContent.split('\n');
     
-    // Skip the first line (language declaration)
+    // Skip the first line (language declaration) if it exists
+    let startLine = 0;
+    if (lines.length > 0 && lines[0].trim().match(/^l_[a-z]+:/)) {
+      startLine = 1;
+    }
+    
     let inComment = false;
     
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = startLine; i < lines.length; i++) {
       const line = lines[i].trim();
       
       // Skip empty lines
@@ -210,8 +219,9 @@ class LocalizationService {
       
       if (inComment) continue;
       
-      // Parse the line
-      const match = line.match(/^\s*([^:]+):(\d+)\s*"(.*)"\s*$/);
+      // Parse the line - try different formats
+      // Standard format: KEY:0 "Value"
+      let match = line.match(/^\s*([^:]+):(\d+)\s*"(.*)"\s*$/);
       if (match) {
         const key = match[1].trim();
         const index = parseInt(match[2], 10);
@@ -219,6 +229,18 @@ class LocalizationService {
         
         // Store the entry
         entries[key] = value;
+        continue;
+      }
+      
+      // Alternative format: KEY: "Value"
+      match = line.match(/^\s*([^:]+):\s*"(.*)"\s*$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        
+        // Store the entry
+        entries[key] = value;
+        continue;
       }
     }
     
@@ -300,12 +322,13 @@ class LocalizationService {
       
       // Get active mods
       const activeMods = await modRepository.getEnabledModsForActivePlayset();
+      logger.debug(`Found ${activeMods.length} active mods for localization`);
       
       let totalLoaded = 0;
       
       // Process each mod
       for (const mod of activeMods) {
-        logger.info(`Processing localizations from mod: ${mod.name}`);
+        logger.info(`Processing localizations from mod: ${mod.name} (${mod.id})`);
         
         // Skip mods without a directory path
         if (!mod.dirPath) {
@@ -313,32 +336,71 @@ class LocalizationService {
           continue;
         }
         
-        // Localization directory in the mod
-        const modLocPath = path.join(mod.dirPath, 'localisation', this.language);
+        logger.debug(`Mod directory path: ${mod.dirPath}`);
         
-        try {
-          // Check if the directory exists
-          await fs.access(modLocPath);
-          
-          // Find all localization files in the mod
-          const files = await this.findLocalizationFiles(modLocPath);
-          
-          let modLoaded = 0;
-          
-          // Load each file
-          for (const file of files) {
-            const fileLoaded = await this.loadLocalizationFile(file);
-            modLoaded += fileLoaded;
+        // Try multiple possible localization paths
+        const possiblePaths = [
+          // Standard path with language subdirectory
+          path.join(mod.dirPath, 'localisation', this.language),
+          // Try with capitalized language name
+          path.join(mod.dirPath, 'localisation', this.language.charAt(0).toUpperCase() + this.language.slice(1)),
+          // Try without language subdirectory
+          path.join(mod.dirPath, 'localisation'),
+          // Try with 'localization' spelling (American English)
+          path.join(mod.dirPath, 'localization', this.language),
+          // Try with capitalized language name (American English)
+          path.join(mod.dirPath, 'localization', this.language.charAt(0).toUpperCase() + this.language.slice(1)),
+          // Try without language subdirectory (American English)
+          path.join(mod.dirPath, 'localization')
+        ];
+        
+        logger.debug(`Trying ${possiblePaths.length} possible localization paths for mod ${mod.name}`);
+        
+        let modLoaded = 0;
+        let foundValidPath = false;
+        
+        // Try each possible path
+        for (const locPath of possiblePaths) {
+          try {
+            // Check if the directory exists
+            await fs.access(locPath);
+            logger.debug(`Found localization directory: ${locPath}`);
+            
+            // Find all localization files in the mod
+            const files = await this.findLocalizationFiles(locPath);
+            
+            if (files.length > 0) {
+              logger.info(`Found ${files.length} localization files in ${locPath}`);
+              
+              // Log the files we found
+              for (const file of files) {
+                logger.debug(`Processing localization file: ${file}`);
+                const fileLoaded = await this.loadLocalizationFile(file);
+                modLoaded += fileLoaded;
+                logger.debug(`Loaded ${fileLoaded} entries from ${file}`);
+              }
+              
+              foundValidPath = true;
+              break; // Found and processed files, no need to check other paths
+            } else {
+              logger.debug(`No localization files found in directory: ${locPath}`);
+            }
+          } catch (error) {
+            // If the directory doesn't exist, just try the next one
+            logger.debug(`No localization directory found at ${locPath}: ${error.message}`);
           }
-          
-          logger.info(`Loaded ${modLoaded} localization entries from mod ${mod.name}`);
-          totalLoaded += modLoaded;
-        } catch (error) {
-          // If the directory doesn't exist, just skip it
-          logger.debug(`No ${this.language} localization directory found for mod ${mod.name}: ${error.message}`);
         }
+        
+        if (foundValidPath) {
+          logger.info(`Loaded ${modLoaded} localization entries from mod ${mod.name}`);
+        } else {
+          logger.warn(`No localization files found for mod ${mod.name}`);
+        }
+        
+        totalLoaded += modLoaded;
       }
       
+      logger.info(`Total localization entries loaded from all mods: ${totalLoaded}`);
       return totalLoaded;
     } catch (error) {
       logger.error(`Error loading mod localizations: ${error.message}`);
