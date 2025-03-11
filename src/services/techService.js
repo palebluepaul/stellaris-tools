@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const TechParser = require('../parsers/techParser');
 const TechDatabase = require('../models/techDatabase');
 const modRepository = require('../database/modRepository');
+const localizationService = require('./localizationService');
 
 /**
  * Simple in-memory cache for parsed technology files
@@ -333,6 +334,16 @@ class TechService {
     logger.info('Building technology tree...');
     this.database.buildTechTree();
     
+    // Load and apply localizations
+    logger.info('Loading and applying localizations...');
+    await localizationService.initialize();
+    const localizationCount = await localizationService.loadLocalizations(gamePath);
+    logger.info(`Loaded ${localizationCount} localization entries`);
+    
+    // Apply localizations to technologies
+    const localizedCount = localizationService.localizeAllTechnologies(this.database);
+    logger.info(`Applied localization to ${localizedCount} technologies`);
+    
     // Log cache statistics
     const cacheStats = this.fileCache.getStats();
     logger.info(`Cache statistics: ${cacheStats.size} files cached, ${cacheStats.hits} hits, ${cacheStats.misses} misses, ${cacheStats.hitRate} hit rate`);
@@ -341,6 +352,7 @@ class TechService {
       totalCount: baseGameCount + modCount,
       baseGameCount,
       modCount,
+      localizedCount,
       cacheStats
     };
   }

@@ -78,7 +78,7 @@ app.get('/api/technologies/:id', (req, res) => {
     }
     
     const { id } = req.params;
-    const technology = techService.getTechnologyById(id);
+    const technology = techService.getTechnology(id);
     
     if (!technology) {
       return res.status(404).json({ error: `Technology with ID ${id} not found` });
@@ -86,7 +86,7 @@ app.get('/api/technologies/:id', (req, res) => {
     
     res.json(technology);
   } catch (error) {
-    logger.error(`Error getting technology ${req.params.id}: ${error.message}`);
+    logger.error(`Error getting technology: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
