@@ -144,17 +144,7 @@ const PlanTab = ({
         const availableTechsList = [];
         const researchedTechIds = new Set(researchedTechs.map(tech => tech.id));
         
-        // First, add all tier 0 techs that have no prerequisites
-        [...plannedTechs, ...allPrereqsList].forEach(tech => {
-          if (tech.tier === 0 && 
-              (!tech.prerequisites || tech.prerequisites.length === 0) &&
-              !researchedTechIds.has(tech.id)) {
-            console.log(`Tech ${tech.name || tech.id} is tier 0 with no prerequisites, marking as available`);
-            availableTechsList.push(tech);
-          }
-        });
-        
-        // Then, add techs whose prerequisites are all researched
+        // Add techs whose prerequisites are all researched or have no prerequisites
         [...plannedTechs, ...allPrereqsList].forEach(tech => {
           // Skip if already added or researched
           if (availableTechsList.some(t => t.id === tech.id) || 
@@ -162,18 +152,13 @@ const PlanTab = ({
             return;
           }
           
-          // Skip if no prerequisites (these were handled above)
-          if (!tech.prerequisites || tech.prerequisites.length === 0) {
-            return;
-          }
+          // Check if tech has no prerequisites or all prerequisites are researched
+          const hasNoPrereqs = !tech.prerequisites || tech.prerequisites.length === 0;
+          const allPrereqsResearched = tech.prerequisites && tech.prerequisites.length > 0 && 
+            tech.prerequisites.every(prereqId => researchedTechIds.has(prereqId));
           
-          // Check if all prerequisites are researched
-          const allPrereqsResearched = tech.prerequisites.every(prereqId => 
-            researchedTechIds.has(prereqId)
-          );
-          
-          if (allPrereqsResearched) {
-            console.log(`All prerequisites for ${tech.name || tech.id} are researched, marking as available`);
+          if (hasNoPrereqs || allPrereqsResearched) {
+            console.log(`Tech ${tech.name || tech.id} is available (no prereqs or all prereqs researched)`);
             availableTechsList.push(tech);
           }
         });
@@ -286,17 +271,7 @@ const PlanTab = ({
       // Determine available technologies (tier 0/1 or all prerequisites are researched)
       const availableTechsList = [];
       
-      // First, add all tier 0 techs that have no prerequisites
-      [...plannedTechs, ...prereqTechs].forEach(tech => {
-        if (tech.tier === 0 && 
-            (!tech.prerequisites || tech.prerequisites.length === 0) &&
-            !researchedTechs.some(t => t.id === tech.id)) {
-          console.log(`Tech ${tech.name || tech.id} is tier 0 with no prerequisites, marking as available`);
-          availableTechsList.push(tech);
-        }
-      });
-      
-      // Then, add techs whose prerequisites are all researched
+      // Add techs whose prerequisites are all researched or have no prerequisites
       [...plannedTechs, ...prereqTechs].forEach(tech => {
         // Skip if already added or researched
         if (availableTechsList.some(t => t.id === tech.id) || 
@@ -304,18 +279,13 @@ const PlanTab = ({
           return;
         }
         
-        // Skip if no prerequisites (these were handled above)
-        if (!tech.prerequisites || tech.prerequisites.length === 0) {
-          return;
-        }
+        // Check if tech has no prerequisites or all prerequisites are researched
+        const hasNoPrereqs = !tech.prerequisites || tech.prerequisites.length === 0;
+        const allPrereqsResearched = tech.prerequisites && tech.prerequisites.length > 0 && 
+          tech.prerequisites.every(prereqId => researchedTechs.some(t => t.id === prereqId));
         
-        // Check if all prerequisites are researched
-        const allPrereqsResearched = tech.prerequisites.every(prereqId => 
-          researchedTechs.some(t => t.id === prereqId)
-        );
-        
-        if (allPrereqsResearched) {
-          console.log(`All prerequisites for ${tech.name || tech.id} are researched, marking as available`);
+        if (hasNoPrereqs || allPrereqsResearched) {
+          console.log(`Tech ${tech.name || tech.id} is available (no prereqs or all prereqs researched)`);
           availableTechsList.push(tech);
         }
       });
