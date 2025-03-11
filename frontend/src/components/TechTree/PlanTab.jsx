@@ -41,7 +41,8 @@ const PlanTab = ({
   plannedTechs = [], 
   researchedTechs = [], 
   onTogglePlanTech, 
-  onToggleResearchedTech 
+  onToggleResearchedTech,
+  onClearPlan
 }) => {
   const [allPrerequisites, setAllPrerequisites] = useState([]);
   const [availableTechs, setAvailableTechs] = useState([]);
@@ -605,6 +606,18 @@ const PlanTab = ({
                       <Box flex="1" textAlign="left" fontWeight="bold">
                         Planned Technologies ({plannedTechs.length})
                       </Box>
+                      <Button 
+                        size="xs" 
+                        colorScheme="red" 
+                        mr={2}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent accordion from toggling
+                          onClearPlan();
+                        }}
+                        isDisabled={plannedTechs.length === 0}
+                      >
+                        Clear All
+                      </Button>
                       <AccordionIcon />
                     </AccordionButton>
                   </h2>

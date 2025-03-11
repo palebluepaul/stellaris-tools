@@ -22,6 +22,12 @@ import TechTree from './components/TechTree/TechTree'
 import PlaysetSelector from './components/PlaysetSelector'
 import PlanTab from './components/TechTree/PlanTab'
 
+// Constants for localStorage keys
+const STORAGE_KEYS = {
+  PLANNED_TECHS: 'stellaris-tools-planned-techs',
+  RESEARCHED_TECHS: 'stellaris-tools-researched-techs'
+};
+
 function App() {
   // Color mode toggle
   const { colorMode, toggleColorMode } = useColorMode();
@@ -30,8 +36,27 @@ function App() {
   const [techReloadTrigger, setTechReloadTrigger] = useState(0);
   
   // State for planned technologies
-  const [plannedTechs, setPlannedTechs] = useState([]);
-  const [researchedTechs, setResearchedTechs] = useState([]);
+  const [plannedTechs, setPlannedTechs] = useState(() => {
+    // Initialize from localStorage if available
+    try {
+      const storedPlannedTechs = localStorage.getItem(STORAGE_KEYS.PLANNED_TECHS);
+      return storedPlannedTechs ? JSON.parse(storedPlannedTechs) : [];
+    } catch (error) {
+      console.error('Error loading planned techs from localStorage:', error);
+      return [];
+    }
+  });
+  
+  const [researchedTechs, setResearchedTechs] = useState(() => {
+    // Initialize from localStorage if available
+    try {
+      const storedResearchedTechs = localStorage.getItem(STORAGE_KEYS.RESEARCHED_TECHS);
+      return storedResearchedTechs ? JSON.parse(storedResearchedTechs) : [];
+    } catch (error) {
+      console.error('Error loading researched techs from localStorage:', error);
+      return [];
+    }
+  });
 
   // Sample debug data
   const [debugData, setDebugData] = useState({
@@ -166,8 +191,32 @@ function App() {
     });
   };
 
+  // Handle clearing all planned and researched technologies
+  const handleClearPlan = () => {
+    setPlannedTechs([]);
+    setResearchedTechs([]);
+  };
+
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const textColor = useColorModeValue('gray.800', 'gray.100');
+
+  // Save planned techs to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PLANNED_TECHS, JSON.stringify(plannedTechs));
+    } catch (error) {
+      console.error('Error saving planned techs to localStorage:', error);
+    }
+  }, [plannedTechs]);
+
+  // Save researched techs to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESEARCHED_TECHS, JSON.stringify(researchedTechs));
+    } catch (error) {
+      console.error('Error saving researched techs to localStorage:', error);
+    }
+  }, [researchedTechs]);
 
   return (
     <Box bg={bgColor} color={textColor} minH="100vh" pb="100px">
@@ -225,6 +274,7 @@ function App() {
                     researchedTechs={researchedTechs}
                     onTogglePlanTech={handleTogglePlanTech}
                     onToggleResearchedTech={handleToggleResearchedTech}
+                    onClearPlan={handleClearPlan}
                   />
                 </TabPanel>
               </TabPanels>
