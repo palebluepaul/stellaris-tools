@@ -103,16 +103,35 @@ const PlanTab = ({
         const allPrereqsSet = new Set();
         const allPrereqsList = [];
         
+        // Track which planned techs each prerequisite gates
+        const prereqToPlannedTechMap = new Map();
+        
         // Process each technology's prerequisites
-        Object.values(result.technologies).forEach(techData => {
+        Object.entries(result.technologies).forEach(([techId, techData]) => {
+          const plannedTech = plannedTechs.find(t => t.id === techId);
+          
           if (techData.allPrerequisites) {
             techData.allPrerequisites.forEach(prereq => {
+              // Add to the map of which planned techs this prerequisite gates
+              if (!prereqToPlannedTechMap.has(prereq.id)) {
+                prereqToPlannedTechMap.set(prereq.id, []);
+              }
+              prereqToPlannedTechMap.get(prereq.id).push(plannedTech);
+              
+              // Add to the set of all prerequisites
               if (!allPrereqsSet.has(prereq.id)) {
                 allPrereqsSet.add(prereq.id);
                 allPrereqsList.push({
                   ...prereq,
-                  _isPrerequisite: true
+                  _isPrerequisite: true,
+                  _gatesPlannedTechs: [plannedTech]
                 });
+              } else {
+                // Update the existing prerequisite to add this planned tech
+                const existingPrereq = allPrereqsList.find(p => p.id === prereq.id);
+                if (existingPrereq && !existingPrereq._gatesPlannedTechs.some(t => t.id === plannedTech.id)) {
+                  existingPrereq._gatesPlannedTechs.push(plannedTech);
+                }
               }
             });
           }
@@ -199,8 +218,11 @@ const PlanTab = ({
       const plannedTechIds = new Set(plannedTechs.map(tech => tech.id));
       console.log('PlanTab - plannedTechIds:', Array.from(plannedTechIds));
       
+      // Track which planned techs each prerequisite gates
+      const prereqToPlannedTechMap = new Map();
+      
       // Function to recursively find all prerequisites
-      const findAllPrereqs = (tech, techsMap) => {
+      const findAllPrereqs = (tech, techsMap, plannedTech) => {
         if (!tech.prerequisites || tech.prerequisites.length === 0) {
           return;
         }
@@ -208,10 +230,18 @@ const PlanTab = ({
         tech.prerequisites.forEach(prereqId => {
           allPrereqIds.add(prereqId);
           
+          // Add to the map of which planned techs this prerequisite gates
+          if (!prereqToPlannedTechMap.has(prereqId)) {
+            prereqToPlannedTechMap.set(prereqId, []);
+          }
+          if (!prereqToPlannedTechMap.get(prereqId).some(t => t.id === plannedTech.id)) {
+            prereqToPlannedTechMap.get(prereqId).push(plannedTech);
+          }
+          
           // Find the prerequisite tech object
           const prereqTech = techsMap.get(prereqId);
           if (prereqTech) {
-            findAllPrereqs(prereqTech, techsMap);
+            findAllPrereqs(prereqTech, techsMap, plannedTech);
           }
         });
       };
@@ -223,20 +253,26 @@ const PlanTab = ({
       });
       
       // Find all prerequisites for each planned tech
-      plannedTechs.forEach(tech => {
-        findAllPrereqs(tech, techsMap);
+      plannedTechs.forEach(plannedTech => {
+        findAllPrereqs(plannedTech, techsMap, plannedTech);
       });
       
       console.log('All prerequisite IDs:', Array.from(allPrereqIds));
       
       // Get all prerequisite tech objects
       const prereqTechs = Array.from(allPrereqIds)
-        .map(id => techsMap.get(id))
-        .filter(tech => tech !== undefined)
-        .map(tech => ({
-          ...tech,
-          _isPrerequisite: true
-        }));
+        .map(id => {
+          const tech = techsMap.get(id);
+          if (tech) {
+            return {
+              ...tech,
+              _isPrerequisite: true,
+              _gatesPlannedTechs: prereqToPlannedTechMap.get(id) || []
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
       
       console.log('Prerequisite technologies:', prereqTechs);
       
@@ -336,38 +372,56 @@ const PlanTab = ({
     return grouped;
   }, [availableTechs]);
   
-  // Group remaining prerequisites by category
-  const remainingPrereqsByCategory = useMemo(() => {
-    const grouped = {
-      physics: [],
-      society: [],
-      engineering: []
-    };
+  // Group remaining prerequisites by planned tech
+  const remainingPrereqsByPlannedTech = useMemo(() => {
+    const grouped = {};
     
     // Filter prerequisites that are not yet researched
     const remainingPrereqs = allPrerequisites.filter(
       tech => !researchedTechs.some(t => t.id === tech.id)
     );
     
+    // Group by the planned techs they gate
     remainingPrereqs.forEach(tech => {
-      const category = tech.areaId || 'physics';
-      if (grouped[category]) {
-        grouped[category].push(tech);
+      if (tech._gatesPlannedTechs && tech._gatesPlannedTechs.length > 0) {
+        tech._gatesPlannedTechs.forEach(plannedTech => {
+          const plannedTechId = plannedTech.id;
+          if (!grouped[plannedTechId]) {
+            grouped[plannedTechId] = {
+              plannedTech,
+              prerequisites: []
+            };
+          }
+          
+          // Only add if not already in the list
+          if (!grouped[plannedTechId].prerequisites.some(p => p.id === tech.id)) {
+            grouped[plannedTechId].prerequisites.push(tech);
+          }
+        });
       }
     });
     
-    // Sort each category by tier and then by name
-    Object.keys(grouped).forEach(category => {
-      grouped[category].sort((a, b) => {
+    // Sort prerequisites in each group by tier and name
+    Object.values(grouped).forEach(group => {
+      group.prerequisites.sort((a, b) => {
         if (a.tier !== b.tier) {
           return a.tier - b.tier;
         }
-        return a.name.localeCompare(b.name);
+        return (a.displayName || a.name || a.id).localeCompare(b.displayName || b.name || b.id);
       });
     });
     
     return grouped;
   }, [allPrerequisites, researchedTechs]);
+  
+  // Calculate total counts for each section
+  const totalRemainingPrereqs = useMemo(() => 
+    Object.values(remainingPrereqsByPlannedTech).reduce(
+      (total, group) => total + group.prerequisites.length, 
+      0
+    ), 
+    [remainingPrereqsByPlannedTech]
+  );
   
   // Group researched technologies by category
   const researchedTechsByCategory = useMemo(() => {
@@ -396,15 +450,6 @@ const PlanTab = ({
     
     return grouped;
   }, [researchedTechs]);
-  
-  // Calculate total counts for each section
-  const totalRemainingPrereqs = useMemo(() => 
-    Object.values(remainingPrereqsByCategory).reduce(
-      (total, techs) => total + techs.length, 
-      0
-    ), 
-    [remainingPrereqsByCategory]
-  );
   
   // If no techs are planned, show empty state
   if (plannedTechs.length === 0) {
@@ -490,17 +535,26 @@ const PlanTab = ({
                                       as={tech._isPrerequisite ? InfoIcon : StarIcon} 
                                       color={tech._isPrerequisite ? "blue.500" : "yellow.500"} 
                                     />
-                                    <Text>
-                                      {tech.displayName || tech.name || tech.id}
-                                      <Badge ml={2} colorScheme={categoryColors[category]}>
-                                        Tier {tech.tier}
-                                      </Badge>
-                                      {tech._isPrerequisite && (
-                                        <Badge ml={2} colorScheme="blue">
-                                          Prerequisite
+                                    <Box>
+                                      <Text>
+                                        {tech.displayName || tech.name || tech.id}
+                                        <Badge ml={2} colorScheme={categoryColors[category]}>
+                                          Tier {tech.tier}
                                         </Badge>
+                                        {tech._isPrerequisite && (
+                                          <Badge ml={2} colorScheme="blue">
+                                            Prerequisite
+                                          </Badge>
+                                        )}
+                                      </Text>
+                                      {tech._gatesPlannedTechs && tech._gatesPlannedTechs.length > 0 && (
+                                        <Text fontSize="sm" color="gray.500" mt={1}>
+                                          Gates: {tech._gatesPlannedTechs.map(pt => 
+                                            pt.displayName || pt.name || pt.id
+                                          ).join(', ')}
+                                        </Text>
                                       )}
-                                    </Text>
+                                    </Box>
                                   </ListItem>
                                 ))}
                               </List>
@@ -531,14 +585,14 @@ const PlanTab = ({
                       <Text color="gray.500" fontStyle="italic">No remaining prerequisites.</Text>
                     ) : (
                       <VStack spacing={3} align="stretch">
-                        {Object.entries(remainingPrereqsByCategory).map(([category, techs]) => (
-                          techs.length > 0 && (
-                            <Box key={category}>
-                              <Heading size="xs" mb={2} color={`${categoryColors[category]}.500`}>
-                                {category.charAt(0).toUpperCase() + category.slice(1)} ({techs.length})
+                        {Object.entries(remainingPrereqsByPlannedTech).map(([plannedTechId, group]) => (
+                          group.prerequisites.length > 0 && (
+                            <Box key={plannedTechId}>
+                              <Heading size="xs" mb={2} color={`${categoryColors[group.plannedTech.areaId] || 'physics'}.500`}>
+                                {group.plannedTech.displayName || group.plannedTech.name || group.plannedTech.id}
                               </Heading>
                               <List spacing={2}>
-                                {techs.map(tech => (
+                                {group.prerequisites.map(tech => (
                                   <ListItem key={tech.id} display="flex" alignItems="center">
                                     <Checkbox 
                                       isChecked={researchedTechs.some(t => t.id === tech.id)}
@@ -547,15 +601,12 @@ const PlanTab = ({
                                     />
                                     <ListIcon 
                                       as={InfoIcon} 
-                                      color="blue.500" 
+                                      color={`${categoryColors[tech.areaId] || 'physics'}.500`} 
                                     />
                                     <Text>
                                       {tech.displayName || tech.name || tech.id}
-                                      <Badge ml={2} colorScheme={categoryColors[category]}>
+                                      <Badge ml={2} colorScheme={categoryColors[tech.areaId] || 'physics'}>
                                         Tier {tech.tier}
-                                      </Badge>
-                                      <Badge ml={2} colorScheme="blue">
-                                        Prerequisite
                                       </Badge>
                                       {availableTechs.some(t => t.id === tech.id) && (
                                         <Badge ml={2} colorScheme="green">
