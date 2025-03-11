@@ -18,7 +18,8 @@ The application follows a modular architecture with these primary components:
 
 ```
 stellaris-tools/
-├── src/
+├── src/                # Backend code
+│   ├── api/            # API server for frontend integration
 │   ├── cli/            # Command-line interface tools
 │   ├── config/         # Configuration settings
 │   ├── database/       # Database access layer
@@ -27,10 +28,20 @@ stellaris-tools/
 │   ├── services/       # Business logic services
 │   ├── utils/          # Utility functions
 │   └── index.js        # Main application entry point
+├── frontend/           # Frontend React application
+│   ├── src/            # Frontend source code
+│   │   ├── components/ # React components
+│   │   ├── services/   # Frontend services (API client)
+│   │   ├── assets/     # Static assets
+│   │   ├── App.jsx     # Main application component
+│   │   └── main.jsx    # Entry point
+│   ├── public/         # Static files
+│   └── index.html      # HTML template
 ├── tests/              # Test files
+├── dist/               # Build output
 ├── .eslintrc.json      # ESLint configuration
 ├── jest.config.js      # Jest configuration
-├── package.json        # Project dependencies
+├── package.json        # Backend dependencies
 └── README.md           # This file
 ```
 
@@ -38,84 +49,33 @@ stellaris-tools/
 
 The application is built with a modular architecture:
 
-1. **Data Collection Module**: Responsible for gathering all required data from game files, mods, and save games
-2. **Data Processing Module**: Responsible for parsing, merging, and preparing the data for visualization
-3. **Visualization Module**: Handles the rendering of the tech tree in the UI
-4. **User Interface**: A Node.js front-end application using Tailwind CSS
+1. **Backend**:
+   - **Data Collection Module**: Responsible for gathering all required data from game files, mods, and save games
+   - **Data Processing Module**: Responsible for parsing, merging, and preparing the data for visualization
+   - **API Server**: Express.js server that provides RESTful endpoints for the frontend
 
-## JavaScript Standards
+2. **Frontend**:
+   - **React Application**: Built with React and Vite
+   - **Visualization Module**: Uses ReactFlow for interactive tech tree visualization
+   - **UI Components**: Built with Chakra UI for a responsive and accessible interface
 
-The project follows these JavaScript standards:
+## Technology Stack
 
-1. **Module System**: Uses CommonJS module system (`require`/`module.exports`) for backend services
-2. **Code Style**: Follows ESLint recommended rules with additional customizations:
-   - 2-space indentation
-   - Unix line endings
-   - Single quotes for strings
-   - Semicolons required
-3. **Async Patterns**: Uses async/await for asynchronous operations
-4. **Error Handling**: Implements comprehensive try/catch blocks with logging
-5. **Logging**: Uses Winston for structured logging
-6. **Documentation**: Uses JSDoc comments for function and class documentation
+### Backend
+- **Node.js**: JavaScript runtime
+- **Express**: Web server framework for API endpoints
+- **SQLite**: Database for mod information
+- **Nearley.js**: Parser for Stellaris technology definition files
+- **Winston**: Logging library
 
-When implementing the frontend (Phase 3), we should consider:
-- Using ES modules (import/export) for frontend code
-- Setting up a bundler like Vite for frontend development
-- Ensuring proper module interoperability between backend and frontend
+### Frontend
+- **React**: UI library
+- **Vite**: Build tool and development server
+- **ReactFlow**: Interactive node-based diagrams
+- **Chakra UI**: Component library for accessible UI
+- **Framer Motion**: Animation library
 
-## Key Components
-
-### Game Path Detection
-
-The application automatically detects Stellaris installation paths and user data directories on different platforms:
-
-- Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\`
-- macOS: `~/Documents/Paradox Interactive/Stellaris/`
-
-### Mod Database Access
-
-The application reads the Stellaris launcher database to determine the active mod set:
-
-- Windows: `%USERPROFILE%\Documents\Paradox Interactive\Stellaris\launcher-v2.sqlite`
-- macOS: `~/Documents/Paradox Interactive/Stellaris/launcher-v2.sqlite`
-
-### Technology File Parsing
-
-The application uses a custom parser built with Nearley.js to parse Stellaris technology definition files, which have a complex nested structure.
-
-### Technology Database
-
-The application builds a comprehensive technology database that includes:
-
-- Base game technologies
-- Mod-added technologies
-- Technology relationships (prerequisites and dependents)
-- Technology metadata (area, tier, cost, etc.)
-
-### Caching System
-
-The application includes a simple caching system to avoid re-parsing files that haven't changed, which significantly improves performance on subsequent runs.
-
-### Technology Tree
-
-The application builds a comprehensive technology tree that includes:
-
-- Hierarchical structure based on prerequisites
-- Support for complex prerequisite relationships
-- Path tracing from any technology to its root
-- Efficient search functionality
-- Support for filtering by area, category, and tier
-- Handling of mod-added technologies and conflicts
-
-The technology tree provides insights into:
-
-- Root technologies (those with no prerequisites)
-- Maximum depth and width of the tree
-- Technologies at each depth level
-- Parent-child relationships between technologies
-- Complete paths from any technology to its root
-
-## Usage
+## Installation and Setup
 
 ### Prerequisites
 
@@ -123,7 +83,7 @@ The technology tree provides insights into:
 - Stellaris game installation
 - (Optional) Stellaris mods installed through the launcher
 
-### Installation
+### Backend Setup
 
 1. Clone the repository
 2. Install dependencies:
@@ -132,17 +92,66 @@ The technology tree provides insights into:
 npm install
 ```
 
-### Running the Backend Services
+### Frontend Setup
 
-To start the main application:
+1. Navigate to the frontend directory:
 
 ```bash
-npm start
+cd frontend
 ```
 
-This initializes the core services, detects game paths, connects to the launcher database, and loads technologies from the base game and mods.
+2. Install frontend dependencies:
 
-### CLI Commands
+```bash
+npm install
+```
+
+## Running the Application
+
+### Start the Backend API Server
+
+```bash
+npm run api
+```
+
+This starts the Express server on port 3000, which provides the API endpoints for the frontend.
+
+### Start the Frontend Development Server
+
+In a separate terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+This starts the Vite development server, typically on port 5173. Open your browser to the URL shown in the terminal (usually http://localhost:5173).
+
+### Production Build
+
+To create a production build of the frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+This creates optimized files in the `frontend/dist` directory, which can be served by the backend in production mode.
+
+## API Endpoints
+
+The backend provides the following API endpoints:
+
+- `GET /api/health`: Health check endpoint
+- `GET /api/technologies`: Get all technologies (with optional filtering)
+- `GET /api/technologies/:id`: Get a specific technology by ID
+- `GET /api/categories`: Get all technology categories
+- `GET /api/areas`: Get all technology areas
+- `GET /api/tech-tree`: Get the root technologies of the tech tree
+
+## Development Tools
+
+### Backend CLI Commands
 
 The application includes several command-line tools for testing and debugging:
 
@@ -154,56 +163,55 @@ The application includes several command-line tools for testing and debugging:
 - `npm run tech-database`: Test the technology database and display statistics
 - `npm run tech-tree`: Test the technology tree functionality and display tree statistics
 
-Example output from `npm run tech-tree`:
+### Frontend Development Commands
 
-```
-=== Technology Tree Statistics ===
-Total technologies: 2408
-Root technologies: 560
-Maximum depth: 14
-Maximum width: 573
+- `npm run dev`: Start the development server
+- `npm run build`: Build for production
+- `npm run preview`: Preview the production build locally
+- `npm run lint`: Run ESLint to check for code issues
 
-=== Technologies by Area ===
-physics: 697 technologies
-society: 789 technologies
-engineering: 846 technologies
+## Features
 
-=== Technologies by Tier ===
-Tier 0: 120 technologies
-Tier 1: 176 technologies
-Tier 2: 295 technologies
-Tier 3: 280 technologies
-Tier 4: 194 technologies
-Tier 5: 620 technologies
-```
+### Interactive Tech Tree Visualization
 
-## Development
+- **Zoom and Pan**: Navigate the tech tree with intuitive zoom and pan controls
+- **Node Selection**: Click on technologies to see details and highlight prerequisites
+- **Search**: Find technologies by name or description
+- **Filtering**: Filter technologies by category, area, and tier
+- **Dark Mode**: Toggle between light and dark themes
 
-### Running Tests
+### Technology Data
 
-```bash
-npm test
-```
-
-### Linting
-
-```bash
-npm run lint
-```
-
-### Building
-
-```bash
-npm run build
-```
+- **Base Game Technologies**: All technologies from the base game
+- **Mod Support**: Technologies from installed mods
+- **Save Game Integration**: Highlight researched technologies from save games
+- **Detailed Information**: View cost, prerequisites, and effects for each technology
 
 ## Implementation Status
 
 - ✅ Phase 1: Data Collection and Base Game Parsing
 - ✅ Phase 2: Technology Tree Construction
-- ⬜ Phase 3: Interactive Visualization
+- ✅ Phase 3: Interactive Visualization
 - ⬜ Phase 4: Save Game Parsing
 - ⬜ Phase 5: Application Integration and Polish
+
+## Troubleshooting
+
+### Backend Connection Issues
+
+If the frontend cannot connect to the backend:
+
+1. Ensure the backend server is running (`npm run api`)
+2. Check that the API_BASE_URL in `frontend/src/services/api.js` matches your backend URL
+3. Look for CORS errors in the browser console
+
+### Missing Technologies
+
+If technologies are not displaying:
+
+1. Verify Stellaris installation path is correctly detected
+2. Check that mods are properly installed through the Stellaris launcher
+3. Run `npm run tech-database` to verify technology parsing
 
 ## License
 
