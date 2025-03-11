@@ -47,11 +47,12 @@ const SearchBar = ({
     
     // Simulate search delay for better UX
     setTimeout(() => {
-      const results = technologies.filter(tech => 
-        tech.name.toLowerCase().includes(term.toLowerCase()) ||
-        tech.description.toLowerCase().includes(term.toLowerCase()) ||
-        tech.id.toLowerCase().includes(term.toLowerCase())
-      );
+      const results = technologies.filter(tech => {
+        const displayName = tech.displayName || tech.name;
+        return displayName.toLowerCase().includes(term.toLowerCase()) ||
+          tech.description.toLowerCase().includes(term.toLowerCase()) ||
+          tech.id.toLowerCase().includes(term.toLowerCase());
+      });
       
       setSearchResults(results);
       setIsSearching(false);
@@ -84,7 +85,7 @@ const SearchBar = ({
   
   // Handle result selection
   const handleSelectResult = (tech) => {
-    setSearchTerm(tech.name);
+    setSearchTerm(tech.displayName || tech.name);
     setShowResults(false);
     onSelectTech(tech);
   };
@@ -217,7 +218,7 @@ const SearchBar = ({
             >
               <Flex justify="space-between" align="center">
                 <Box>
-                  <Text fontWeight="bold">{tech.name}</Text>
+                  <Text fontWeight="bold">{tech.displayName || tech.name}</Text>
                   <Text fontSize="sm" noOfLines={1}>{tech.description}</Text>
                 </Box>
                 <Box>
@@ -250,6 +251,17 @@ const SearchBar = ({
           <Text>No technologies found matching "{searchTerm}"</Text>
         </Box>
       )}
+      
+      {/* Keyboard shortcut hint */}
+      <Box 
+        position="absolute" 
+        bottom="-24px" 
+        right="0" 
+        fontSize="xs" 
+        color="gray.500"
+      >
+        Press <Kbd fontSize="xs">Ctrl</Kbd> + <Kbd fontSize="xs">K</Kbd> to focus
+      </Box>
     </Box>
   );
 };

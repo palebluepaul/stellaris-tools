@@ -107,7 +107,7 @@ const TechNode = ({ id, data, isConnectable, selected: reactFlowSelected }) => {
       />
       
       <Tooltip 
-        label={`${data.name} (${data.tier}) - ${data.category} / ${data.area}`}
+        label={`${data.displayName || data.name} (${data.tier}) - ${data.category} / ${data.area}`}
         placement="top"
         hasArrow
         openDelay={300}
@@ -149,7 +149,7 @@ const TechNode = ({ id, data, isConnectable, selected: reactFlowSelected }) => {
               color={textColor}
               noOfLines={2}
             >
-              {data.name}
+              {data.displayName || data.name}
             </Text>
             
             {/* Tech details */}

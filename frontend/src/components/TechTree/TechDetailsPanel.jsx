@@ -52,7 +52,7 @@ const DebugInfoContent = ({ tech }) => {
   // Call all hooks at the top level
   const { hasCopied, onCopy } = useClipboard(JSON.stringify({
     id: tech.id,
-    name: tech.name || tech.displayName,
+    name: tech.displayName || tech.name,
     tier: tech.tier,
     category: tech.category || tech.areaId,
     area: tech.area || tech.categoryId,
@@ -77,7 +77,7 @@ const DebugInfoContent = ({ tech }) => {
         <Text whiteSpace="pre-wrap" pr={10}>
           {JSON.stringify({
             id: tech.id,
-            name: tech.name || tech.displayName,
+            name: tech.displayName || tech.name,
             tier: tech.tier,
             category: tech.category || tech.areaId,
             area: tech.area || tech.categoryId,
@@ -206,7 +206,7 @@ const TechDetailsPanel = ({
             <Box>
               <Flex align="center" mb={2}>
                 <Text fontSize="2xl" mr={2}>{areaIcon}</Text>
-                <Heading size="lg">{selectedTech.name}</Heading>
+                <Heading size="lg">{selectedTech.displayName || selectedTech.name}</Heading>
               </Flex>
               
               <HStack spacing={2} mb={3} wrap="wrap">
@@ -299,7 +299,7 @@ const TechDetailsPanel = ({
                         <Flex justify="space-between" align="center">
                           <HStack>
                             <ListIcon as={ChevronRightIcon} color="green.500" />
-                            <Text fontWeight="medium">{tech.name}</Text>
+                            <Text fontWeight="medium">{tech.displayName || tech.name}</Text>
                           </HStack>
                           <HStack>
                             <Badge colorScheme={categoryColors[tech.category]}>
@@ -360,7 +360,7 @@ const TechDetailsPanel = ({
                         <Flex justify="space-between" align="center">
                           <HStack>
                             <ListIcon as={ChevronRightIcon} color="blue.500" />
-                            <Text fontWeight="medium">{tech.name}</Text>
+                            <Text fontWeight="medium">{tech.displayName || tech.name}</Text>
                           </HStack>
                           <HStack>
                             <Badge colorScheme={categoryColors[tech.category]}>
